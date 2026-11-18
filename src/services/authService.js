@@ -2,13 +2,14 @@
 import { supabase } from '../supabase/client'
 
 // 1. Register a new customer
-export const registerUser = async (fullName, email, password) => {
+export const registerUser = async (fullName, phone, email, password) => {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: {
         full_name: fullName,
+        phone: phone,
       },
       emailRedirectTo: window.location.origin,
     },
