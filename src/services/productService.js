@@ -1,67 +1,102 @@
 
 import { supabase } from '../supabase/client'
 
-// 1. Register a new customer
-export const registerUser = async (fullName, email, password) => {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName,
-      },
-      emailRedirectTo: window.location.origin,
-    },
-  })
+// Get all active products
+export const getProducts = async ({
+  categoryId,
+  search,
+  sortBy = 'created_at',
+  ascending = false,
+  limit,
+} = {}) => {
+  const allowedSortFields = [
+    'created_at',
+    'name',
+    'price',
+  ]
 
-  if (error) throw error
+  const safeSortBy = allowedSortFields.includes(sortBy)
+    ? sortBy
+    : 'created_at'
+
+  let query = supabase
+    .from('products')
+    .select('*')
+    .eq('is_active', true)
+    .order(safeSortBy, { ascending })
+
+  // Filter products by category
+  if (categoryId) {
+    query = query.eq('category_id', categoryId)
+  }
+
+  // Search product names and descriptions
+  if (search?.trim()) {
+    const searchTerm = search.trim()
+    query = query.or(
+      `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`
+    )
+  }
+
+  // Limit the number of products returned
+  if (limit) {
+    query = query.limit(limit)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    throw error
+  }
 
   return data
 }
 
-// 2. Login using email and password
-export const loginUser = async (email, password) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
+// Get one product using its slug
+export const getProductBySlug = async (slug) => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('slug', slug)
+    .eq('is_active', true)
+    .maybeSingle()
 
-  if (error) throw error
-
-  return data
-}
-
-// 3. Login using Google
-export const loginWithGoogle = async () => {
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: window.location.origin,
-    },
-  })
-
-  if (error) throw error
+  if (error) {
+    throw error
+  }
 
   return data
 }
 
-// 4. Logout
-export const logoutUser = async () => {
-  const { error } = await supabase.auth.signOut()
+// Get featured products
+export const getFeaturedProducts = async (limit = 8) => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('is_active', true)
+    .eq('is_featured', true)
+    .order('created_at', { ascending: false })
+    .limit(limit)
 
-  if (error) throw error
+  if (error) {
+    throw error
+  }
+
+  return data
 }
 
-// 5. Get the current user session
-export const getCurrentSession = async () => {
-  const { data, error } = await supabase.auth.getSession()
+// Get products belonging to one category
+export const getProductsByCategory = async (categoryId) => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('category_id', categoryId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
 
-  if (error) throw error
+  if (error) {
+    throw error
+  }
 
-  return data.session
-}
-
-// 6. Listen for authentication changes
-export const onAuthStateChange = (callback) => {
-  return supabase.auth.onAuthStateChange(callback)
+  return data
 }
