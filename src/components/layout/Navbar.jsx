@@ -8,13 +8,14 @@ import {
   Menu,
   X,
   User,
-  LogOut,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { useCart } from '../../context/CartContext'
 import { logoutUser } from '../../services/authService'
 
 const Navbar = () => {
-  const { user, isAuthenticated } = useAuth()
+  const { isAuthenticated } = useAuth()
+  const { cartCount } = useCart()
   const navigate = useNavigate()
 
   const [searchTerm, setSearchTerm] = useState('')
@@ -35,6 +36,7 @@ const Navbar = () => {
     try {
       setLoggingOut(true)
       await logoutUser()
+      setMenuOpen(false)
       navigate('/login')
     } catch (error) {
       console.error('Logout failed:', error.message)
@@ -84,7 +86,7 @@ const Navbar = () => {
           ))}
         </nav>
 
-        {/* Search */}
+        {/* Desktop Search */}
         <form
           onSubmit={handleSearch}
           className="hidden max-w-xs flex-1 lg:flex"
@@ -104,12 +106,20 @@ const Navbar = () => {
 
         {/* Desktop Actions */}
         <div className="hidden items-center gap-4 md:flex">
+
+          {/* Shopping Cart */}
           <Link
             to="/cart"
-            aria-label="Shopping cart"
+            aria-label={`Shopping cart with ${cartCount} items`}
             className="relative text-gray-600 transition hover:text-green-700"
           >
             <ShoppingCart size={23} />
+
+            {cartCount > 0 && (
+              <span className="absolute -right-3 -top-3 flex h-5 min-w-5 items-center justify-center rounded-full bg-green-600 px-1 text-xs font-bold text-white">
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            )}
           </Link>
 
           {isAuthenticated ? (
@@ -125,7 +135,7 @@ const Navbar = () => {
               <button
                 onClick={handleLogout}
                 disabled={loggingOut}
-                className="text-sm font-medium text-red-600 hover:text-red-700"
+                className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
               >
                 {loggingOut ? 'Signing out...' : 'Logout'}
               </button>
@@ -149,20 +159,39 @@ const Navbar = () => {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
-        <button
-          type="button"
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="rounded-lg p-2 text-gray-700 hover:bg-green-50 md:hidden"
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-        >
-          {menuOpen ? <X size={25} /> : <Menu size={25} />}
-        </button>
+        {/* Mobile Cart and Menu Button */}
+        <div className="flex items-center gap-3 md:hidden">
+
+          <Link
+            to="/cart"
+            aria-label={`Shopping cart with ${cartCount} items`}
+            className="relative p-2 text-gray-700 hover:text-green-700"
+          >
+            <ShoppingCart size={23} />
+
+            {cartCount > 0 && (
+              <span className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-green-600 px-1 text-xs font-bold text-white">
+                {cartCount > 99 ? '99+' : cartCount}
+              </span>
+            )}
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="rounded-lg p-2 text-gray-700 hover:bg-green-50"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          >
+            {menuOpen ? <X size={25} /> : <Menu size={25} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
       {menuOpen && (
         <div className="border-t border-green-100 bg-white px-4 py-5 md:hidden">
+
+          {/* Mobile Search */}
           <form onSubmit={handleSearch} className="mb-4">
             <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3">
               <Search size={18} className="text-gray-400" />
@@ -197,10 +226,18 @@ const Navbar = () => {
             <Link
               to="/cart"
               onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2 text-sm font-medium text-gray-700"
+              className="flex items-center justify-between text-sm font-medium text-gray-700"
             >
-              <ShoppingCart size={18} />
-              Shopping Cart
+              <span className="flex items-center gap-2">
+                <ShoppingCart size={18} />
+                Shopping Cart
+              </span>
+
+              {cartCount > 0 && (
+                <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-bold text-green-700">
+                  {cartCount} {cartCount === 1 ? 'item' : 'items'}
+                </span>
+              )}
             </Link>
 
             {isAuthenticated ? (
@@ -216,7 +253,7 @@ const Navbar = () => {
                 <button
                   onClick={handleLogout}
                   disabled={loggingOut}
-                  className="text-left text-sm font-medium text-red-600"
+                  className="text-left text-sm font-medium text-red-600 disabled:opacity-50"
                 >
                   {loggingOut ? 'Signing out...' : 'Logout'}
                 </button>
