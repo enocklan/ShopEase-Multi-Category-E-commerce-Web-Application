@@ -142,16 +142,16 @@ const Footer = () => {
               <li className="flex items-center gap-3">
                 <Mail size={19} className="shrink-0 text-green-400" />
                 <a
-                  href="mailto:support@shopease.com"
+                  href="mailto:enockkipkirui003@gmail.com"
                   className="transition hover:text-green-400"
                 >
-                  support@shopease.com
+                  enockkipkirui003@gmail.com
                 </a>
               </li>
 
               <li className="flex items-center gap-3">
                 <Phone size={19} className="shrink-0 text-green-400" />
-                <span>Customer Support</span>
+                <span>0726779485</span>
               </li>
             </ul>
           </div>
@@ -164,7 +164,7 @@ const Footer = () => {
           </p>
 
           <p className="text-gray-400">
-            Made with <span className="text-green-400">♥</span> in Kenya
+            Made by <span className="text-green-400">Enock♥</span> Kenya
           </p>
         </div>
 
