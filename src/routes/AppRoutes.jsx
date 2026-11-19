@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Home from '../pages/Home'
 import Login from '../pages/Login'
 import Register from '../pages/Register'
+import Cart from '../pages/Cart'
 
 const AppRoutes = () => {
   return (
@@ -13,8 +14,9 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} /> 
+        <Route path="/cart" element={<Cart />} />
+         </Routes>
     </BrowserRouter>
   )
 }
