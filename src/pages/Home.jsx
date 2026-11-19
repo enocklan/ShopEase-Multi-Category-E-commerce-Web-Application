@@ -103,7 +103,9 @@ const Home = () => {
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="mb-8 flex items-center justify-between gap-4">
             <div>
-              <p className="font-semibold text-green-700">Browse collections</p>
+              <p className="font-semibold text-green-700">
+                Browse collections
+              </p>
               <h2 className="mt-1 text-3xl font-bold text-gray-900">
                 Shop by Category
               </h2>
@@ -139,7 +141,9 @@ const Home = () => {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-8 flex items-center justify-between gap-4">
               <div>
-                <p className="font-semibold text-green-700">Handpicked for you</p>
+                <p className="font-semibold text-green-700">
+                  Handpicked for you
+                </p>
                 <h2 className="mt-1 text-3xl font-bold text-gray-900">
                   Featured Products
                 </h2>
@@ -175,6 +179,7 @@ const Home = () => {
         {error && (
           <div className="mx-auto max-w-7xl px-4 py-6 text-center">
             <p className="text-red-600">{error}</p>
+
             <button
               onClick={() => window.location.reload()}
               className="mt-3 inline-flex items-center gap-2 font-semibold text-green-700"
@@ -190,10 +195,12 @@ const Home = () => {
           <h2 className="text-3xl font-bold">
             Ready to Find Something You Love?
           </h2>
+
           <p className="mx-auto mt-4 max-w-xl text-green-100">
             Explore our collections and discover products that make
             your everyday life easier.
           </p>
+
           <Link
             to="/products"
             className="mt-8 inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 font-semibold text-green-800 transition hover:bg-green-50"
