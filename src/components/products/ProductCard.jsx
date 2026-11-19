@@ -25,6 +25,8 @@ const ProductCard = ({ product }) => {
 
   return (
     <div className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
+
+      {/* Product Image */}
       <Link to={`/products/${slug}`} className="relative block">
         <div className="relative h-56 overflow-hidden bg-green-50">
           {imageUrl ? (
@@ -54,13 +56,17 @@ const ProductCard = ({ product }) => {
         </div>
       </Link>
 
+      {/* Product Information */}
       <div className="p-4">
+
+        {/* Product Name */}
         <Link to={`/products/${slug}`}>
           <h3 className="truncate text-lg font-semibold text-gray-900 hover:text-green-700">
             {name}
           </h3>
         </Link>
 
+        {/* Product Price */}
         <div className="mt-2 flex items-center gap-2">
           <span className="text-lg font-bold text-green-700">
             {formatPrice(price)}
@@ -73,14 +79,25 @@ const ProductCard = ({ product }) => {
           )}
         </div>
 
-        <button
-          type="button"
-          disabled={isOutOfStock}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-        >
-          <ShoppingBag size={18} />
-          {isOutOfStock ? 'Unavailable' : 'View product'}
-        </button>
+        {/* View Product Button */}
+        {isOutOfStock ? (
+          <button
+            type="button"
+            disabled
+            className="mt-4 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-gray-300 px-4 py-2.5 font-medium text-white"
+          >
+            <ShoppingBag size={18} />
+            Unavailable
+          </button>
+        ) : (
+          <Link
+            to={`/products/${slug}`}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 font-medium text-white transition hover:bg-green-700"
+          >
+            <ShoppingBag size={18} />
+            View product
+          </Link>
+        )}
       </div>
     </div>
   )
