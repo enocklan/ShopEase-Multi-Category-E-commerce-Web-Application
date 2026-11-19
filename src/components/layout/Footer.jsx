@@ -5,9 +5,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Facebook,
-  Instagram,
-  Twitter,
 } from 'lucide-react'
 
 const Footer = () => {
@@ -36,20 +33,36 @@ const Footer = () => {
               at affordable prices and enjoy a simple shopping experience.
             </p>
 
-            <div className="mt-5 flex gap-4">
-              <a href="https://facebook.com" target="_blank" rel="noreferrer"
-                aria-label="Facebook" className="hover:text-green-400">
-                <Facebook size={20} />
+            {/* Social Links */}
+            <div className="mt-5 flex items-center gap-4">
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Facebook"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 font-bold text-white transition hover:bg-green-600"
+              >
+                f
               </a>
 
-              <a href="https://instagram.com" target="_blank" rel="noreferrer"
-                aria-label="Instagram" className="hover:text-green-400">
-                <Instagram size={20} />
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 text-sm font-bold text-white transition hover:bg-green-600"
+              >
+                IG
               </a>
 
-              <a href="https://twitter.com" target="_blank" rel="noreferrer"
-                aria-label="Twitter" className="hover:text-green-400">
-                <Twitter size={20} />
+              <a
+                href="https://x.com"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="X"
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-800 font-bold text-white transition hover:bg-green-600"
+              >
+                X
               </a>
             </div>
           </div>
@@ -61,10 +74,26 @@ const Footer = () => {
             </h3>
 
             <ul className="space-y-3 text-sm">
-              <li><Link to="/" className="hover:text-green-400">Home</Link></li>
-              <li><Link to="/products" className="hover:text-green-400">Products</Link></li>
-              <li><Link to="/categories" className="hover:text-green-400">Categories</Link></li>
-              <li><Link to="/cart" className="hover:text-green-400">Shopping Cart</Link></li>
+              <li>
+                <Link to="/" className="transition hover:text-green-400">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link to="/products" className="transition hover:text-green-400">
+                  Products
+                </Link>
+              </li>
+              <li>
+                <Link to="/categories" className="transition hover:text-green-400">
+                  Categories
+                </Link>
+              </li>
+              <li>
+                <Link to="/cart" className="transition hover:text-green-400">
+                  Shopping Cart
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -75,10 +104,26 @@ const Footer = () => {
             </h3>
 
             <ul className="space-y-3 text-sm">
-              <li><Link to="/login" className="hover:text-green-400">Login</Link></li>
-              <li><Link to="/register" className="hover:text-green-400">Create Account</Link></li>
-              <li><Link to="/profile" className="hover:text-green-400">My Profile</Link></li>
-              <li><Link to="/my-orders" className="hover:text-green-400">My Orders</Link></li>
+              <li>
+                <Link to="/login" className="transition hover:text-green-400">
+                  Login
+                </Link>
+              </li>
+              <li>
+                <Link to="/register" className="transition hover:text-green-400">
+                  Create Account
+                </Link>
+              </li>
+              <li>
+                <Link to="/profile" className="transition hover:text-green-400">
+                  My Profile
+                </Link>
+              </li>
+              <li>
+                <Link to="/my-orders" className="transition hover:text-green-400">
+                  My Orders
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -96,7 +141,10 @@ const Footer = () => {
 
               <li className="flex items-center gap-3">
                 <Mail size={19} className="shrink-0 text-green-400" />
-                <a href="mailto:support@shopease.com" className="hover:text-green-400">
+                <a
+                  href="mailto:support@shopease.com"
+                  className="transition hover:text-green-400"
+                >
                   support@shopease.com
                 </a>
               </li>
