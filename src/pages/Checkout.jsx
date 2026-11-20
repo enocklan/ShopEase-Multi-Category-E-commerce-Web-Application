@@ -8,7 +8,9 @@ import Footer from '../components/layout/Footer'
 
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
+
 import { validateDeliveryDetails } from '../utils/validators'
+import { saveAddress } from '../services/addressService'
 
 const counties = [
   'Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet',
@@ -38,8 +40,14 @@ const Checkout = () => {
   const total = cartTotal + deliveryFee
 
   const [formData, setFormData] = useState({
-    fullName: profile?.full_name || user?.user_metadata?.full_name || '',
-    phone: profile?.phone || user?.user_metadata?.phone || '',
+    fullName:
+      profile?.full_name ||
+      user?.user_metadata?.full_name ||
+      '',
+    phone:
+      profile?.phone ||
+      user?.user_metadata?.phone ||
+      '',
     county: '',
     city: '',
     streetAddress: '',
@@ -49,6 +57,8 @@ const Checkout = () => {
 
   const [errors, setErrors] = useState({})
   const [successMessage, setSuccessMessage] = useState('')
+  const [saveError, setSaveError] = useState('')
+  const [savingAddress, setSavingAddress] = useState(false)
 
   if (cartItems.length === 0) {
     return <Navigate to="/cart" replace />
@@ -68,23 +78,39 @@ const Checkout = () => {
     }))
 
     setSuccessMessage('')
+    setSaveError('')
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
 
     const validationErrors = validateDeliveryDetails(formData)
 
     setErrors(validationErrors)
+    setSaveError('')
+    setSuccessMessage('')
 
     if (Object.keys(validationErrors).length > 0) {
-      setSuccessMessage('')
       return
     }
 
-    setSuccessMessage(
-      'Your delivery information is valid. You can proceed to the next checkout stage.'
-    )
+    try {
+      setSavingAddress(true)
+
+      await saveAddress(user.id, formData)
+
+      setSuccessMessage(
+        'Your delivery address has been saved successfully!'
+      )
+    } catch (error) {
+      console.error('Address saving error:', error)
+
+      setSaveError(
+        error.message || 'Unable to save your delivery address. Please try again.'
+      )
+    } finally {
+      setSavingAddress(false)
+    }
   }
 
   const inputClass = (field) =>
@@ -99,10 +125,12 @@ const Checkout = () => {
       <main className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
 
+          {/* Page Heading */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">
               Checkout
             </h1>
+
             <p className="mt-2 text-gray-600">
               Enter your delivery details to continue with your order.
             </p>
@@ -125,6 +153,7 @@ const Checkout = () => {
                     <h2 className="text-xl font-bold text-gray-900">
                       Delivery information
                     </h2>
+
                     <p className="text-sm text-gray-500">
                       Where should we deliver your order?
                     </p>
@@ -135,10 +164,15 @@ const Checkout = () => {
 
                   {/* Full Name */}
                   <div className="sm:col-span-2">
-                    <label className="font-medium text-gray-700">
+                    <label
+                      htmlFor="fullName"
+                      className="font-medium text-gray-700"
+                    >
                       Full name *
                     </label>
+
                     <input
+                      id="fullName"
                       type="text"
                       name="fullName"
                       value={formData.fullName}
@@ -146,6 +180,7 @@ const Checkout = () => {
                       placeholder="Enter your full name"
                       className={inputClass('fullName')}
                     />
+
                     {errors.fullName && (
                       <p className="mt-1 text-sm text-red-600">
                         {errors.fullName}
@@ -155,10 +190,15 @@ const Checkout = () => {
 
                   {/* Phone */}
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label
+                      htmlFor="phone"
+                      className="font-medium text-gray-700"
+                    >
                       Phone number *
                     </label>
+
                     <input
+                      id="phone"
                       type="tel"
                       name="phone"
                       value={formData.phone}
@@ -166,6 +206,7 @@ const Checkout = () => {
                       placeholder="0712345678"
                       className={inputClass('phone')}
                     />
+
                     {errors.phone && (
                       <p className="mt-1 text-sm text-red-600">
                         {errors.phone}
@@ -175,22 +216,29 @@ const Checkout = () => {
 
                   {/* County */}
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label
+                      htmlFor="county"
+                      className="font-medium text-gray-700"
+                    >
                       County *
                     </label>
+
                     <select
+                      id="county"
                       name="county"
                       value={formData.county}
                       onChange={handleChange}
                       className={inputClass('county')}
                     >
                       <option value="">Select your county</option>
+
                       {counties.map((county) => (
                         <option key={county} value={county}>
                           {county}
                         </option>
                       ))}
                     </select>
+
                     {errors.county && (
                       <p className="mt-1 text-sm text-red-600">
                         {errors.county}
@@ -200,10 +248,15 @@ const Checkout = () => {
 
                   {/* City */}
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label
+                      htmlFor="city"
+                      className="font-medium text-gray-700"
+                    >
                       Town / City *
                     </label>
+
                     <input
+                      id="city"
                       type="text"
                       name="city"
                       value={formData.city}
@@ -211,6 +264,7 @@ const Checkout = () => {
                       placeholder="e.g. Nairobi"
                       className={inputClass('city')}
                     />
+
                     {errors.city && (
                       <p className="mt-1 text-sm text-red-600">
                         {errors.city}
@@ -220,10 +274,15 @@ const Checkout = () => {
 
                   {/* Postal Code */}
                   <div>
-                    <label className="font-medium text-gray-700">
+                    <label
+                      htmlFor="postalCode"
+                      className="font-medium text-gray-700"
+                    >
                       Postal code
                     </label>
+
                     <input
+                      id="postalCode"
                       type="text"
                       name="postalCode"
                       value={formData.postalCode}
@@ -232,6 +291,7 @@ const Checkout = () => {
                       maxLength={5}
                       className={inputClass('postalCode')}
                     />
+
                     {errors.postalCode && (
                       <p className="mt-1 text-sm text-red-600">
                         {errors.postalCode}
@@ -241,10 +301,15 @@ const Checkout = () => {
 
                   {/* Street Address */}
                   <div className="sm:col-span-2">
-                    <label className="font-medium text-gray-700">
+                    <label
+                      htmlFor="streetAddress"
+                      className="font-medium text-gray-700"
+                    >
                       Street address *
                     </label>
+
                     <textarea
+                      id="streetAddress"
                       name="streetAddress"
                       value={formData.streetAddress}
                       onChange={handleChange}
@@ -252,6 +317,7 @@ const Checkout = () => {
                       placeholder="Building, street, estate or landmark"
                       className={inputClass('streetAddress')}
                     />
+
                     {errors.streetAddress && (
                       <p className="mt-1 text-sm text-red-600">
                         {errors.streetAddress}
@@ -259,12 +325,17 @@ const Checkout = () => {
                     )}
                   </div>
 
-                  {/* Instructions */}
+                  {/* Additional Instructions */}
                   <div className="sm:col-span-2">
-                    <label className="font-medium text-gray-700">
+                    <label
+                      htmlFor="instructions"
+                      className="font-medium text-gray-700"
+                    >
                       Additional delivery instructions
                     </label>
+
                     <textarea
+                      id="instructions"
                       name="instructions"
                       value={formData.instructions}
                       onChange={handleChange}
@@ -275,18 +346,30 @@ const Checkout = () => {
                   </div>
                 </div>
 
+                {/* Success Message */}
                 {successMessage && (
                   <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
                     {successMessage}
                   </div>
                 )}
 
+                {/* Error Message */}
+                {saveError && (
+                  <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                    {saveError}
+                  </div>
+                )}
+
+                {/* Form Buttons */}
                 <div className="mt-8 flex flex-col gap-4 sm:flex-row">
                   <button
                     type="submit"
-                    className="rounded-lg bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700"
+                    disabled={savingAddress}
+                    className="rounded-lg bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Validate delivery details
+                    {savingAddress
+                      ? 'Saving address...'
+                      : 'Save delivery address'}
                   </button>
 
                   <Link
@@ -303,6 +386,7 @@ const Checkout = () => {
             <aside className="h-fit rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
               <div className="mb-6 flex items-center gap-3">
                 <ShoppingBag className="text-green-700" size={23} />
+
                 <h2 className="text-xl font-bold text-gray-900">
                   Your order
                 </h2>
@@ -333,6 +417,7 @@ const Checkout = () => {
                         <p className="font-medium text-gray-900">
                           {item.name}
                         </p>
+
                         <p className="text-sm text-gray-500">
                           Quantity: {item.quantity}
                         </p>
@@ -340,7 +425,9 @@ const Checkout = () => {
                     </div>
 
                     <p className="whitespace-nowrap text-sm font-semibold text-gray-800">
-                      {formatPrice(Number(item.price) * item.quantity)}
+                      {formatPrice(
+                        Number(item.price) * item.quantity
+                      )}
                     </p>
                   </div>
                 ))}
@@ -351,6 +438,7 @@ const Checkout = () => {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
+
                   <span className="font-medium">
                     {formatPrice(cartTotal)}
                   </span>
@@ -361,6 +449,7 @@ const Checkout = () => {
                     <Truck size={16} />
                     Delivery fee
                   </span>
+
                   <span className="font-medium">
                     {formatPrice(deliveryFee)}
                   </span>
@@ -371,14 +460,15 @@ const Checkout = () => {
 
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>
+
                 <span className="text-green-700">
                   {formatPrice(total)}
                 </span>
               </div>
 
               <p className="mt-4 text-xs leading-5 text-gray-500">
-                Delivery fee is currently a temporary flat rate and will be
-                refined when delivery pricing is implemented.
+                Delivery fee is currently a temporary flat rate and
+                will be refined when delivery pricing is implemented.
               </p>
             </aside>
 
