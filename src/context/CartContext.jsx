@@ -96,8 +96,9 @@ export const CartProvider = ({ children }) => {
 
   // Clear cart
   const clearCart = () => {
-    setCartItems([])
-  }
+  setCartItems([])
+  localStorage.removeItem('shopease_guest_cart')
+}
 
   // Calculate total quantity
   const cartCount = cartItems.reduce(
