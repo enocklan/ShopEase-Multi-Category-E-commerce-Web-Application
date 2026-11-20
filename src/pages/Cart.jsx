@@ -2,8 +2,7 @@
 import { Link } from 'react-router-dom'
 import { ShoppingBag, ArrowLeft, ShoppingCart } from 'lucide-react'
 
-import Navbar from '../components/layout/Navbar'
-import Footer from '../components/layout/Footer'
+
 import CartItem from '../components/cart/CartItem'
 import CartSummary from '../components/cart/CartSummary'
 import { useCart } from '../context/CartContext'
@@ -18,7 +17,7 @@ const Cart = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+  
 
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
 
@@ -102,7 +101,7 @@ const Cart = () => {
         )}
       </main>
 
-      <Footer />
+   
     </div>
   )
 }

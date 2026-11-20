@@ -8,6 +8,7 @@ import {
   Menu,
   X,
   User,
+  Package,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useCart } from '../../context/CartContext'
@@ -107,7 +108,6 @@ const Navbar = () => {
         {/* Desktop Actions */}
         <div className="hidden items-center gap-4 md:flex">
 
-          {/* Shopping Cart */}
           <Link
             to="/cart"
             aria-label={`Shopping cart with ${cartCount} items`}
@@ -124,6 +124,20 @@ const Navbar = () => {
 
           {isAuthenticated ? (
             <>
+              <NavLink
+                to="/my-orders"
+                className={({ isActive }) =>
+                  `flex items-center gap-2 text-sm font-medium transition ${
+                    isActive
+                      ? 'text-green-700'
+                      : 'text-gray-700 hover:text-green-700'
+                  }`
+                }
+              >
+                <Package size={19} />
+                My Orders
+              </NavLink>
+
               <Link
                 to="/profile"
                 className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-green-700"
@@ -161,7 +175,6 @@ const Navbar = () => {
 
         {/* Mobile Cart and Menu Button */}
         <div className="flex items-center gap-3 md:hidden">
-
           <Link
             to="/cart"
             aria-label={`Shopping cart with ${cartCount} items`}
@@ -242,6 +255,19 @@ const Navbar = () => {
 
             {isAuthenticated ? (
               <>
+                <NavLink
+                  to="/my-orders"
+                  onClick={() => setMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 text-sm font-medium ${
+                      isActive ? 'text-green-700' : 'text-gray-700'
+                    }`
+                  }
+                >
+                  <Package size={18} />
+                  My Orders
+                </NavLink>
+
                 <Link
                   to="/profile"
                   onClick={() => setMenuOpen(false)}

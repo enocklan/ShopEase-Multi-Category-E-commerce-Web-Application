@@ -43,7 +43,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      
 
       <main>
         {/* Hero Section */}
@@ -211,7 +211,7 @@ const Home = () => {
         </section>
       </main>
 
-      <Footer />
+      
     </div>
   )
 }

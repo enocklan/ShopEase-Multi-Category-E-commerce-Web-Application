@@ -2,8 +2,6 @@
 import { useEffect, useState } from 'react'
 import { RefreshCw, Layers } from 'lucide-react'
 
-import Navbar from '../components/layout/Navbar'
-import Footer from '../components/layout/Footer'
 import CategoryCard from '../components/products/CategoryCard'
 import { getCategories } from '../services/categoryService'
 
@@ -33,7 +31,7 @@ const Categories = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+    
 
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
 
@@ -93,7 +91,7 @@ const Categories = () => {
         )}
       </main>
 
-      <Footer />
+    
     </div>
   )
 }

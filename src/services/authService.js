@@ -1,7 +1,7 @@
 
 import { supabase } from '../supabase/client'
 
-// 1. Register a new customer
+// Register a new customer
 export const registerUser = async (fullName, phone, email, password) => {
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -9,18 +9,17 @@ export const registerUser = async (fullName, phone, email, password) => {
     options: {
       data: {
         full_name: fullName,
-        phone: phone,
+        phone,
       },
       emailRedirectTo: window.location.origin,
     },
   })
 
   if (error) throw error
-
   return data
 }
 
-// 2. Login using email and password
+// Login using email and password
 export const loginUser = async (email, password) => {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
@@ -28,11 +27,10 @@ export const loginUser = async (email, password) => {
   })
 
   if (error) throw error
-
   return data
 }
 
-// 3. Login using Google
+// Login using Google
 export const loginWithGoogle = async () => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -42,33 +40,30 @@ export const loginWithGoogle = async () => {
   })
 
   if (error) throw error
-
   return data
 }
 
-// 4. Logout
+// Logout
 export const logoutUser = async () => {
   const { error } = await supabase.auth.signOut()
 
   if (error) throw error
 }
 
-// 5. Get the current user session
+// Get current session
 export const getCurrentSession = async () => {
   const { data, error } = await supabase.auth.getSession()
 
   if (error) throw error
-
   return data.session
 }
 
-// 6. Listen for authentication changes
+// Listen for authentication changes
 export const onAuthStateChange = (callback) => {
   return supabase.auth.onAuthStateChange(callback)
 }
 
-
-// 7. Send password reset email
+// Request password reset email
 export const requestPasswordReset = async (email) => {
   const { data, error } = await supabase.auth.resetPasswordForEmail(
     email,
@@ -78,13 +73,44 @@ export const requestPasswordReset = async (email) => {
   )
 
   if (error) throw error
-
   return data
 }
 
-// 8. Update password after clicking the reset link
+// Update password from password-reset link
 export const updateUserPassword = async (newPassword) => {
+  if (!newPassword) {
+    throw new Error('Please enter your new password.')
+  }
+
   const { data, error } = await supabase.auth.updateUser({
+    password: newPassword,
+  })
+
+  if (error) throw error
+  return data
+}
+
+// Change password after verifying current password
+export const changeUserPassword = async (
+  currentPassword,
+  newPassword
+) => {
+  if (!currentPassword || !newPassword) {
+    throw new Error('Please enter both your current and new passwords.')
+  }
+
+  if (newPassword.length < 8) {
+    throw new Error('Your new password must contain at least 8 characters.')
+  }
+
+  if (currentPassword === newPassword) {
+    throw new Error(
+      'Your new password must be different from your current password.'
+    )
+  }
+
+  const { data, error } = await supabase.auth.updateUser({
+    current_password: currentPassword,
     password: newPassword,
   })
 
@@ -92,4 +118,3 @@ export const updateUserPassword = async (newPassword) => {
 
   return data
 }
-
