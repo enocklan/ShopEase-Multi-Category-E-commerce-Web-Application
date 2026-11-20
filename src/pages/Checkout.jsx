@@ -10,7 +10,7 @@ import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 
 import { validateDeliveryDetails } from '../utils/validators'
-import { saveAddress } from '../services/addressService'
+import { createOrder } from '../services/orderService'
 
 const counties = [
   'Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet',
@@ -59,8 +59,9 @@ const Checkout = () => {
   const [successMessage, setSuccessMessage] = useState('')
   const [saveError, setSaveError] = useState('')
   const [savingAddress, setSavingAddress] = useState(false)
+  const [orderResult, setOrderResult] = useState(null)
 
-  if (cartItems.length === 0) {
+  if (cartItems.length === 0 && !orderResult) {
     return <Navigate to="/cart" replace />
   }
 
@@ -84,6 +85,13 @@ const Checkout = () => {
   const handleSubmit = async (event) => {
     event.preventDefault()
 
+    if (orderResult) return
+
+    if (!user?.id) {
+      setSaveError('Please log in before placing your order.')
+      return
+    }
+
     const validationErrors = validateDeliveryDetails(formData)
 
     setErrors(validationErrors)
@@ -97,16 +105,28 @@ const Checkout = () => {
     try {
       setSavingAddress(true)
 
-      await saveAddress(user.id, formData)
+      // Create the order using the secure Supabase function.
+      // The database calculates the actual prices and checks stock.
+      const result = await createOrder(cartItems, {
+        full_name: formData.fullName.trim(),
+        phone: formData.phone.trim(),
+        county: formData.county,
+        city: formData.city.trim(),
+        street_address: formData.streetAddress.trim(),
+        postal_code: formData.postalCode.trim(),
+        instructions: formData.instructions.trim(),
+      })
+
+      setOrderResult(result)
 
       setSuccessMessage(
-        'Your delivery address has been saved successfully!'
+        'Your order has been placed successfully!'
       )
     } catch (error) {
-      console.error('Address saving error:', error)
+      console.error('Order creation error:', error)
 
       setSaveError(
-        error.message || 'Unable to save your delivery address. Please try again.'
+        error.message || 'Unable to place your order. Please try again.'
       )
     } finally {
       setSavingAddress(false)
@@ -132,7 +152,7 @@ const Checkout = () => {
             </h1>
 
             <p className="mt-2 text-gray-600">
-              Enter your delivery details to continue with your order.
+              Enter your delivery details to place your order.
             </p>
           </div>
 
@@ -353,6 +373,23 @@ const Checkout = () => {
                   </div>
                 )}
 
+                {/* Order Confirmation */}
+                {orderResult && (
+                  <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4">
+                    <h3 className="font-bold text-green-800">
+                      Order confirmed!
+                    </h3>
+
+                    <p className="mt-2 text-sm text-green-700">
+                      Order number: {orderResult.order_number}
+                    </p>
+
+                    <p className="mt-1 text-sm text-green-700">
+                      Total: {formatPrice(Number(orderResult.total_amount))}
+                    </p>
+                  </div>
+                )}
+
                 {/* Error Message */}
                 {saveError && (
                   <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -364,20 +401,33 @@ const Checkout = () => {
                 <div className="mt-8 flex flex-col gap-4 sm:flex-row">
                   <button
                     type="submit"
-                    disabled={savingAddress}
+                    disabled={savingAddress || Boolean(orderResult)}
                     className="rounded-lg bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {savingAddress
-                      ? 'Saving address...'
-                      : 'Save delivery address'}
+                      ? 'Processing order...'
+                      : orderResult
+                        ? 'Order placed successfully'
+                        : 'Place order'}
                   </button>
 
-                  <Link
-                    to="/cart"
-                    className="rounded-lg border border-gray-300 px-6 py-3 text-center font-semibold text-gray-700 transition hover:bg-gray-50"
-                  >
-                    Back to cart
-                  </Link>
+                  {!orderResult && (
+                    <Link
+                      to="/cart"
+                      className="rounded-lg border border-gray-300 px-6 py-3 text-center font-semibold text-gray-700 transition hover:bg-gray-50"
+                    >
+                      Back to cart
+                    </Link>
+                  )}
+
+                  {orderResult && (
+                    <Link
+                      to="/products"
+                      className="rounded-lg border border-gray-300 px-6 py-3 text-center font-semibold text-gray-700 transition hover:bg-gray-50"
+                    >
+                      Continue shopping
+                    </Link>
+                  )}
                 </div>
               </form>
             </section>
@@ -462,13 +512,15 @@ const Checkout = () => {
                 <span>Total</span>
 
                 <span className="text-green-700">
-                  {formatPrice(total)}
+                  {formatPrice(orderResult
+                    ? Number(orderResult.total_amount)
+                    : total
+                  )}
                 </span>
               </div>
 
               <p className="mt-4 text-xs leading-5 text-gray-500">
-                Delivery fee is currently a temporary flat rate and
-                will be refined when delivery pricing is implemented.
+                Delivery fee is currently a temporary flat rate of KSh 200.
               </p>
             </aside>
 
