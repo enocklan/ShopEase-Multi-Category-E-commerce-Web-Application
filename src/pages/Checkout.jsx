@@ -3,9 +3,6 @@ import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { MapPin, ShoppingBag, Truck } from 'lucide-react'
 
-import Navbar from '../components/layout/Navbar'
-import Footer from '../components/layout/Footer'
-
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 
@@ -33,7 +30,7 @@ const formatPrice = (amount) =>
   }).format(amount)
 
 const Checkout = () => {
-  const { cartItems, cartTotal } = useCart()
+  const { cartItems, cartTotal, clearCart } = useCart()
   const { profile, user } = useAuth()
 
   const deliveryFee = 200
@@ -117,7 +114,11 @@ const Checkout = () => {
         instructions: formData.instructions.trim(),
       })
 
+      // Store the successful order response.
       setOrderResult(result)
+
+      // Clear the cart only after successful order creation.
+      clearCart()
 
       setSuccessMessage(
         'Your order has been placed successfully!'
@@ -139,397 +140,392 @@ const Checkout = () => {
     }`
 
   return (
-    <>
-    
+    <main className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
 
-      <main className="min-h-screen bg-gray-50 px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
+        {/* Page Heading */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Checkout
+          </h1>
 
-          {/* Page Heading */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Checkout
-            </h1>
+          <p className="mt-2 text-gray-600">
+            Enter your delivery details to place your order.
+          </p>
+        </div>
 
-            <p className="mt-2 text-gray-600">
-              Enter your delivery details to place your order.
-            </p>
-          </div>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
 
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-
-            {/* Delivery Form */}
-            <section className="lg:col-span-2">
-              <form
-                onSubmit={handleSubmit}
-                className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8"
-              >
-                <div className="mb-6 flex items-center gap-3">
-                  <div className="rounded-lg bg-green-100 p-3 text-green-700">
-                    <MapPin size={22} />
-                  </div>
-
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900">
-                      Delivery information
-                    </h2>
-
-                    <p className="text-sm text-gray-500">
-                      Where should we deliver your order?
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-
-                  {/* Full Name */}
-                  <div className="sm:col-span-2">
-                    <label
-                      htmlFor="fullName"
-                      className="font-medium text-gray-700"
-                    >
-                      Full name *
-                    </label>
-
-                    <input
-                      id="fullName"
-                      type="text"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleChange}
-                      placeholder="Enter your full name"
-                      className={inputClass('fullName')}
-                    />
-
-                    {errors.fullName && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.fullName}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Phone */}
-                  <div>
-                    <label
-                      htmlFor="phone"
-                      className="font-medium text-gray-700"
-                    >
-                      Phone number *
-                    </label>
-
-                    <input
-                      id="phone"
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      placeholder="0712345678"
-                      className={inputClass('phone')}
-                    />
-
-                    {errors.phone && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.phone}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* County */}
-                  <div>
-                    <label
-                      htmlFor="county"
-                      className="font-medium text-gray-700"
-                    >
-                      County *
-                    </label>
-
-                    <select
-                      id="county"
-                      name="county"
-                      value={formData.county}
-                      onChange={handleChange}
-                      className={inputClass('county')}
-                    >
-                      <option value="">Select your county</option>
-
-                      {counties.map((county) => (
-                        <option key={county} value={county}>
-                          {county}
-                        </option>
-                      ))}
-                    </select>
-
-                    {errors.county && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.county}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* City */}
-                  <div>
-                    <label
-                      htmlFor="city"
-                      className="font-medium text-gray-700"
-                    >
-                      Town / City *
-                    </label>
-
-                    <input
-                      id="city"
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleChange}
-                      placeholder="e.g. Nairobi"
-                      className={inputClass('city')}
-                    />
-
-                    {errors.city && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.city}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Postal Code */}
-                  <div>
-                    <label
-                      htmlFor="postalCode"
-                      className="font-medium text-gray-700"
-                    >
-                      Postal code
-                    </label>
-
-                    <input
-                      id="postalCode"
-                      type="text"
-                      name="postalCode"
-                      value={formData.postalCode}
-                      onChange={handleChange}
-                      placeholder="e.g. 00100"
-                      maxLength={5}
-                      className={inputClass('postalCode')}
-                    />
-
-                    {errors.postalCode && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.postalCode}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Street Address */}
-                  <div className="sm:col-span-2">
-                    <label
-                      htmlFor="streetAddress"
-                      className="font-medium text-gray-700"
-                    >
-                      Street address *
-                    </label>
-
-                    <textarea
-                      id="streetAddress"
-                      name="streetAddress"
-                      value={formData.streetAddress}
-                      onChange={handleChange}
-                      rows={3}
-                      placeholder="Building, street, estate or landmark"
-                      className={inputClass('streetAddress')}
-                    />
-
-                    {errors.streetAddress && (
-                      <p className="mt-1 text-sm text-red-600">
-                        {errors.streetAddress}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Additional Instructions */}
-                  <div className="sm:col-span-2">
-                    <label
-                      htmlFor="instructions"
-                      className="font-medium text-gray-700"
-                    >
-                      Additional delivery instructions
-                    </label>
-
-                    <textarea
-                      id="instructions"
-                      name="instructions"
-                      value={formData.instructions}
-                      onChange={handleChange}
-                      rows={3}
-                      placeholder="Any directions that will help us find you (optional)"
-                      className={inputClass('instructions')}
-                    />
-                  </div>
-                </div>
-
-                {/* Success Message */}
-                {successMessage && (
-                  <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-                    {successMessage}
-                  </div>
-                )}
-
-                {/* Order Confirmation */}
-                {orderResult && (
-                  <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4">
-                    <h3 className="font-bold text-green-800">
-                      Order confirmed!
-                    </h3>
-
-                    <p className="mt-2 text-sm text-green-700">
-                      Order number: {orderResult.order_number}
-                    </p>
-
-                    <p className="mt-1 text-sm text-green-700">
-                      Total: {formatPrice(Number(orderResult.total_amount))}
-                    </p>
-                  </div>
-                )}
-
-                {/* Error Message */}
-                {saveError && (
-                  <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                    {saveError}
-                  </div>
-                )}
-
-                {/* Form Buttons */}
-                <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-                  <button
-                    type="submit"
-                    disabled={savingAddress || Boolean(orderResult)}
-                    className="rounded-lg bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {savingAddress
-                      ? 'Processing order...'
-                      : orderResult
-                        ? 'Order placed successfully'
-                        : 'Place order'}
-                  </button>
-
-                  {!orderResult && (
-                    <Link
-                      to="/cart"
-                      className="rounded-lg border border-gray-300 px-6 py-3 text-center font-semibold text-gray-700 transition hover:bg-gray-50"
-                    >
-                      Back to cart
-                    </Link>
-                  )}
-
-                  {orderResult && (
-                    <Link
-                      to="/products"
-                      className="rounded-lg border border-gray-300 px-6 py-3 text-center font-semibold text-gray-700 transition hover:bg-gray-50"
-                    >
-                      Continue shopping
-                    </Link>
-                  )}
-                </div>
-              </form>
-            </section>
-
-            {/* Order Summary */}
-            <aside className="h-fit rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          {/* Delivery Form */}
+          <section className="lg:col-span-2">
+            <form
+              onSubmit={handleSubmit}
+              className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8"
+            >
               <div className="mb-6 flex items-center gap-3">
-                <ShoppingBag className="text-green-700" size={23} />
+                <div className="rounded-lg bg-green-100 p-3 text-green-700">
+                  <MapPin size={22} />
+                </div>
 
-                <h2 className="text-xl font-bold text-gray-900">
-                  Your order
-                </h2>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Delivery information
+                  </h2>
+
+                  <p className="text-sm text-gray-500">
+                    Where should we deliver your order?
+                  </p>
+                </div>
               </div>
 
-              <div className="space-y-4">
-                {cartItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-start justify-between gap-3"
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+
+                {/* Full Name */}
+                <div className="sm:col-span-2">
+                  <label
+                    htmlFor="fullName"
+                    className="font-medium text-gray-700"
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-green-50">
-                        {item.image_urls?.[0] ? (
-                          <img
-                            src={item.image_urls[0]}
-                            alt={item.name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full items-center justify-center text-green-700">
-                            <ShoppingBag size={20} />
-                          </div>
-                        )}
-                      </div>
+                    Full name *
+                  </label>
 
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {item.name}
-                        </p>
+                  <input
+                    id="fullName"
+                    type="text"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    placeholder="Enter your full name"
+                    className={inputClass('fullName')}
+                  />
 
-                        <p className="text-sm text-gray-500">
-                          Quantity: {item.quantity}
-                        </p>
-                      </div>
+                  {errors.fullName && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.fullName}
+                    </p>
+                  )}
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label
+                    htmlFor="phone"
+                    className="font-medium text-gray-700"
+                  >
+                    Phone number *
+                  </label>
+
+                  <input
+                    id="phone"
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="0712345678"
+                    className={inputClass('phone')}
+                  />
+
+                  {errors.phone && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.phone}
+                    </p>
+                  )}
+                </div>
+
+                {/* County */}
+                <div>
+                  <label
+                    htmlFor="county"
+                    className="font-medium text-gray-700"
+                  >
+                    County *
+                  </label>
+
+                  <select
+                    id="county"
+                    name="county"
+                    value={formData.county}
+                    onChange={handleChange}
+                    className={inputClass('county')}
+                  >
+                    <option value="">Select your county</option>
+
+                    {counties.map((county) => (
+                      <option key={county} value={county}>
+                        {county}
+                      </option>
+                    ))}
+                  </select>
+
+                  {errors.county && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.county}
+                    </p>
+                  )}
+                </div>
+
+                {/* City */}
+                <div>
+                  <label
+                    htmlFor="city"
+                    className="font-medium text-gray-700"
+                  >
+                    Town / City *
+                  </label>
+
+                  <input
+                    id="city"
+                    type="text"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    placeholder="e.g. Nairobi"
+                    className={inputClass('city')}
+                  />
+
+                  {errors.city && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.city}
+                    </p>
+                  )}
+                </div>
+
+                {/* Postal Code */}
+                <div>
+                  <label
+                    htmlFor="postalCode"
+                    className="font-medium text-gray-700"
+                  >
+                    Postal code
+                  </label>
+
+                  <input
+                    id="postalCode"
+                    type="text"
+                    name="postalCode"
+                    value={formData.postalCode}
+                    onChange={handleChange}
+                    placeholder="e.g. 00100"
+                    maxLength={5}
+                    className={inputClass('postalCode')}
+                  />
+
+                  {errors.postalCode && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.postalCode}
+                    </p>
+                  )}
+                </div>
+
+                {/* Street Address */}
+                <div className="sm:col-span-2">
+                  <label
+                    htmlFor="streetAddress"
+                    className="font-medium text-gray-700"
+                  >
+                    Street address *
+                  </label>
+
+                  <textarea
+                    id="streetAddress"
+                    name="streetAddress"
+                    value={formData.streetAddress}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Building, street, estate or landmark"
+                    className={inputClass('streetAddress')}
+                  />
+
+                  {errors.streetAddress && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.streetAddress}
+                    </p>
+                  )}
+                </div>
+
+                {/* Additional Instructions */}
+                <div className="sm:col-span-2">
+                  <label
+                    htmlFor="instructions"
+                    className="font-medium text-gray-700"
+                  >
+                    Additional delivery instructions
+                  </label>
+
+                  <textarea
+                    id="instructions"
+                    name="instructions"
+                    value={formData.instructions}
+                    onChange={handleChange}
+                    rows={3}
+                    placeholder="Any directions that will help us find you (optional)"
+                    className={inputClass('instructions')}
+                  />
+                </div>
+              </div>
+
+              {/* Success Message */}
+              {successMessage && (
+                <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+                  {successMessage}
+                </div>
+              )}
+
+              {/* Order Confirmation */}
+              {orderResult && (
+                <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4">
+                  <h3 className="font-bold text-green-800">
+                    Order confirmed!
+                  </h3>
+
+                  <p className="mt-2 text-sm text-green-700">
+                    Order number: {orderResult.order_number}
+                  </p>
+
+                  <p className="mt-1 text-sm text-green-700">
+                    Total: {formatPrice(Number(orderResult.total_amount))}
+                  </p>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {saveError && (
+                <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  {saveError}
+                </div>
+              )}
+
+              {/* Form Buttons */}
+              <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+                <button
+                  type="submit"
+                  disabled={savingAddress || Boolean(orderResult)}
+                  className="rounded-lg bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {savingAddress
+                    ? 'Processing order...'
+                    : orderResult
+                      ? 'Order placed successfully'
+                      : 'Place order'}
+                </button>
+
+                {!orderResult && (
+                  <Link
+                    to="/cart"
+                    className="rounded-lg border border-gray-300 px-6 py-3 text-center font-semibold text-gray-700 transition hover:bg-gray-50"
+                  >
+                    Back to cart
+                  </Link>
+                )}
+
+                {orderResult && (
+                  <Link
+                    to="/products"
+                    className="rounded-lg border border-gray-300 px-6 py-3 text-center font-semibold text-gray-700 transition hover:bg-gray-50"
+                  >
+                    Continue shopping
+                  </Link>
+                )}
+              </div>
+            </form>
+          </section>
+
+          {/* Order Summary */}
+          <aside className="h-fit rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="mb-6 flex items-center gap-3">
+              <ShoppingBag className="text-green-700" size={23} />
+
+              <h2 className="text-xl font-bold text-gray-900">
+                Your order
+              </h2>
+            </div>
+
+            <div className="space-y-4">
+              {cartItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-start justify-between gap-3"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-green-50">
+                      {item.image_urls?.[0] ? (
+                        <img
+                          src={item.image_urls[0]}
+                          alt={item.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-green-700">
+                          <ShoppingBag size={20} />
+                        </div>
+                      )}
                     </div>
 
-                    <p className="whitespace-nowrap text-sm font-semibold text-gray-800">
-                      {formatPrice(
-                        Number(item.price) * item.quantity
-                      )}
-                    </p>
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {item.name}
+                      </p>
+
+                      <p className="text-sm text-gray-500">
+                        Quantity: {item.quantity}
+                      </p>
+                    </div>
                   </div>
-                ))}
-              </div>
 
-              <div className="my-6 border-t border-gray-200" />
-
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal</span>
-
-                  <span className="font-medium">
-                    {formatPrice(cartTotal)}
-                  </span>
+                  <p className="whitespace-nowrap text-sm font-semibold text-gray-800">
+                    {formatPrice(
+                      Number(item.price) * item.quantity
+                    )}
+                  </p>
                 </div>
+              ))}
+            </div>
 
-                <div className="flex justify-between">
-                  <span className="flex items-center gap-2 text-gray-600">
-                    <Truck size={16} />
-                    Delivery fee
-                  </span>
+            <div className="my-6 border-t border-gray-200" />
 
-                  <span className="font-medium">
-                    {formatPrice(deliveryFee)}
-                  </span>
-                </div>
-              </div>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Subtotal</span>
 
-              <div className="my-5 border-t border-gray-200" />
-
-              <div className="flex justify-between text-lg font-bold">
-                <span>Total</span>
-
-                <span className="text-green-700">
-                  {formatPrice(orderResult
-                    ? Number(orderResult.total_amount)
-                    : total
-                  )}
+                <span className="font-medium">
+                  {formatPrice(cartTotal)}
                 </span>
               </div>
 
-              <p className="mt-4 text-xs leading-5 text-gray-500">
-                Delivery fee is currently a temporary flat rate of KSh 200.
-              </p>
-            </aside>
+              <div className="flex justify-between">
+                <span className="flex items-center gap-2 text-gray-600">
+                  <Truck size={16} />
+                  Delivery fee
+                </span>
 
-          </div>
+                <span className="font-medium">
+                  {formatPrice(deliveryFee)}
+                </span>
+              </div>
+            </div>
+
+            <div className="my-5 border-t border-gray-200" />
+
+            <div className="flex justify-between text-lg font-bold">
+              <span>Total</span>
+
+              <span className="text-green-700">
+                {formatPrice(
+                  orderResult
+                    ? Number(orderResult.total_amount)
+                    : total
+                )}
+              </span>
+            </div>
+
+            <p className="mt-4 text-xs leading-5 text-gray-500">
+              Delivery fee is currently a temporary flat rate of KSh 200.
+            </p>
+          </aside>
+
         </div>
-      </main>
-
-      
-    </>
+      </div>
+    </main>
   )
 }
 

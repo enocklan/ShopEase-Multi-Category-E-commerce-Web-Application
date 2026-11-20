@@ -3,8 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, RefreshCw, ShoppingBag } from 'lucide-react'
 
-import Navbar from '../components/layout/Navbar'
-import Footer from '../components/layout/Footer'
+
 import CategoryCard from '../components/products/CategoryCard'
 import ProductCard from '../components/products/ProductCard'
 

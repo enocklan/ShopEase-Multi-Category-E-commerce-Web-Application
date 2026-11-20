@@ -3,8 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, PackageOpen } from 'lucide-react'
 
-import Navbar from '../components/layout/Navbar'
-import Footer from '../components/layout/Footer'
+
 import ProductCard from '../components/products/ProductCard'
 
 import { getCategoryBySlug } from '../services/categoryService'

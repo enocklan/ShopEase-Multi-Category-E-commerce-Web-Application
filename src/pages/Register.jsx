@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ShoppingBag } from 'lucide-react'
 import { registerUser, loginWithGoogle } from '../services/authService'
+import Navbar from '../components/layout/Navbar'
+import Footer from '../components/layout/Footer'
 
 const Register = () => {
   const navigate = useNavigate()
@@ -132,6 +134,8 @@ const Register = () => {
   }
 
   return (
+    <div>
+      <Navbar/>
     <div className="min-h-screen bg-green-50 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
 
@@ -374,6 +378,8 @@ const Register = () => {
         </p>
 
       </div>
+    </div>
+    <Footer/>
     </div>
   )
 }

@@ -1,8 +1,10 @@
 
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, ShoppingBag } from 'lucide-react'
+import { Eye, EyeOff, Footprints, ShoppingBag } from 'lucide-react'
 import { loginUser, loginWithGoogle } from '../services/authService'
+import Navbar from '../components/layout/Navbar'
+import Footer from '../components/layout/Footer'
 
 const Login = () => {
   const navigate = useNavigate()
@@ -74,7 +76,10 @@ const Login = () => {
   }
 
   return (
+    <div>
+    <Navbar/>
     <div className="min-h-screen bg-green-50 flex items-center justify-center px-4 py-10">
+      
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
 
         {/* Logo */}
@@ -226,6 +231,8 @@ const Login = () => {
           © {new Date().getFullYear()} ShopEase. All rights reserved.
         </p>
       </div>
+    </div>
+    <Footer/>
     </div>
   )
 }
