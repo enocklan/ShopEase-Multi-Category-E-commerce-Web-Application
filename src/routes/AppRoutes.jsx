@@ -9,14 +9,16 @@ import Products from '../pages/Products'
 import Categories from '../pages/Categories'
 import ProductDetails from '../pages/ProductDetails'
 import CategoryDetails from '../pages/CategoryDetails'
+import Checkout from '../pages/Checkout'
+
+import ProtectedRoute from './ProtectedRoute'
 
 const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public pages */}
         <Route path="/" element={<Home />} />
-
-        {/* Authentication */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
@@ -27,8 +29,12 @@ const AppRoutes = () => {
         <Route path="/categories" element={<Categories />} />
         <Route path="/categories/:slug" element={<CategoryDetails />} />
 
-        {/* Cart */}
         <Route path="/cart" element={<Cart />} />
+
+        {/* Protected customer pages */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/checkout" element={<Checkout />} />
+        </Route>
 
         {/* Unknown pages */}
         <Route path="*" element={<Navigate to="/" replace />} />
