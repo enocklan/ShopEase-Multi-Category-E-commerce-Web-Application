@@ -66,3 +66,30 @@ export const getCurrentSession = async () => {
 export const onAuthStateChange = (callback) => {
   return supabase.auth.onAuthStateChange(callback)
 }
+
+
+// 7. Send password reset email
+export const requestPasswordReset = async (email) => {
+  const { data, error } = await supabase.auth.resetPasswordForEmail(
+    email,
+    {
+      redirectTo: `${window.location.origin}/reset-password`,
+    }
+  )
+
+  if (error) throw error
+
+  return data
+}
+
+// 8. Update password after clicking the reset link
+export const updateUserPassword = async (newPassword) => {
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword,
+  })
+
+  if (error) throw error
+
+  return data
+}
+
