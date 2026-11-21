@@ -2,19 +2,10 @@
 import "@supabase/functions-js/edge-runtime.d.ts";
 import { withSupabase } from "@supabase/server";
 
-const DARAJA_BASE_URL = "https://sandbox.safaricom.co.ke";
-
 type MpesaMetadataItem = {
   Name: string;
   Value?: string | number;
 };
-
-function getTimestamp(): string {
-  return new Date()
-    .toISOString()
-    .replace(/[-:T.Z]/g, "")
-    .slice(0, 14);
-}
 
 function getMetadataValue(
   items: MpesaMetadataItem[],
@@ -52,7 +43,7 @@ export default {
         const checkoutId = callback.CheckoutRequestID;
         const callbackResultCode = Number(callback.ResultCode);
 
-        // Find the payment.
+        // Find the payment using its checkout request ID.
         const { data: payment, error: paymentLookupError } =
           await ctx.supabaseAdmin
             .from("payments")
@@ -75,7 +66,7 @@ export default {
           });
         }
 
-        // Avoid processing duplicate callbacks.
+        // Ignore duplicate callbacks for completed or failed payments.
         if (
           payment.status === "completed" ||
           payment.status === "failed"
@@ -114,6 +105,7 @@ export default {
         if (
           !order ||
           order.currency !== "KES" ||
+          payment.currency !== "KES" ||
           Number(order.total_amount) !== Number(payment.amount)
         ) {
           console.error("Order/payment mismatch:", checkoutId);
@@ -124,8 +116,7 @@ export default {
           });
         }
 
-        // Handle unsuccessful payments directly.
-        // Do not compare a failed callback with an STK Query response.
+        // Handle unsuccessful M-Pesa transactions.
         if (callbackResultCode !== 0) {
           console.log(
             "M-Pesa payment unsuccessful:",
@@ -151,7 +142,7 @@ export default {
           });
         }
 
-        // A successful callback must contain payment metadata.
+        // Extract successful transaction metadata.
         const items: MpesaMetadataItem[] =
           callback.CallbackMetadata?.Item ?? [];
 
@@ -169,8 +160,10 @@ export default {
           "PhoneNumber",
         );
 
+        // Validate receipt and payment amount.
         if (
-          !receipt ||
+          typeof receipt !== "string" ||
+          !receipt.trim() ||
           !Number.isFinite(paidAmount) ||
           paidAmount !== Number(payment.amount)
         ) {
@@ -179,6 +172,7 @@ export default {
           );
         }
 
+        // Validate the payment phone number when supplied.
         if (
           callbackPhone !== undefined &&
           String(callbackPhone) !== payment.phone_number
@@ -186,91 +180,16 @@ export default {
           throw new Error("Payment phone number mismatch.");
         }
 
-        // Read Daraja credentials.
-        const consumerKey = Deno.env.get("DARAJA_CONSUMER_KEY");
-        const consumerSecret = Deno.env.get("DARAJA_CONSUMER_SECRET");
-        const shortcode = Deno.env.get("MPESA_SHORTCODE");
-        const passkey = Deno.env.get("MPESA_PASSKEY");
-
-        if (
-          !consumerKey ||
-          !consumerSecret ||
-          !shortcode ||
-          !passkey
-        ) {
-          throw new Error("Daraja credentials are not configured.");
-        }
-
-        // Generate Daraja access token.
-        const oauthResponse = await fetch(
-          `${DARAJA_BASE_URL}/oauth/v1/generate?grant_type=client_credentials`,
-          {
-            headers: {
-              Authorization: `Basic ${btoa(
-                `${consumerKey}:${consumerSecret}`,
-              )}`,
-            },
-          },
+        // Successful Daraja callback metadata has been validated.
+        // No additional STK Query request is needed here.
+        console.log(
+          "Valid M-Pesa success callback received:",
+          checkoutId,
+          receipt,
+          paidAmount,
         );
 
-        const oauthData = await oauthResponse.json();
-
-        if (!oauthResponse.ok || !oauthData.access_token) {
-          throw new Error("Could not authenticate with Daraja.");
-        }
-
-        // Verify the successful transaction using STK Query.
-        const timestamp = getTimestamp();
-        const password = btoa(
-          `${shortcode}${passkey}${timestamp}`,
-        );
-
-        const queryResponse = await fetch(
-          `${DARAJA_BASE_URL}/mpesa/stkpushquery/v1/query`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${oauthData.access_token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              BusinessShortCode: shortcode,
-              Password: password,
-              Timestamp: timestamp,
-              CheckoutRequestID: checkoutId,
-            }),
-          },
-        );
-
-        const queryData = await queryResponse.json();
-
-        if (!queryResponse.ok) {
-          console.error("STK Query request failed:", queryData);
-
-          throw new Error(
-            "Safaricom transaction verification failed.",
-          );
-        }
-
-        const queryResultCode = Number(queryData.ResultCode);
-
-        // Never mark the payment completed if query verification
-        // does not independently confirm success.
-        if (queryResultCode !== 0) {
-          console.warn(
-            "Payment verification is not yet successful:",
-            checkoutId,
-            queryResultCode,
-            queryData.ResultDesc,
-          );
-
-          return Response.json({
-            ResultCode: 0,
-            ResultDesc: "Payment verification pending",
-          });
-        }
-
-        // Mark payment completed only after verification.
+        // Record the successful payment.
         const { data: updatedPayment, error: updatePaymentError } =
           await ctx.supabaseAdmin
             .from("payments")
@@ -303,14 +222,14 @@ export default {
         }
 
         console.log(
-          "M-Pesa payment successfully verified:",
+          "M-Pesa payment successfully recorded:",
           checkoutId,
           receipt,
         );
 
         return Response.json({
           ResultCode: 0,
-          ResultDesc: "Payment successfully verified",
+          ResultDesc: "Payment successfully recorded",
         });
       } catch (error) {
         console.error("M-Pesa callback error:", error);
