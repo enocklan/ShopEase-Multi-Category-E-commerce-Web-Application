@@ -1,20 +1,33 @@
 
 import { supabase } from '../supabase/client'
 
-// Create an order using the secure Supabase database function
+// Create an order through the secure Supabase Edge Function
 export const createOrder = async (cartItems, shippingAddress) => {
+  // Prepare cart items for the backend
   const items = cartItems.map((item) => ({
     product_id: item.id,
     quantity: item.quantity,
   }))
 
-  const { data, error } = await supabase.rpc('create_order', {
-    p_items: items,
-    p_shipping_address: shippingAddress,
+  // Call the Edge Function
+  const { data, error } = await supabase.functions.invoke('create-order', {
+    body: {
+      items,
+      shippingAddress,
+    },
   })
 
-  if (error) throw error
+  // Handle Edge Function errors
+  if (error) {
+    throw new Error(error.message || 'Unable to create your order.')
+  }
 
+  // Handle unsuccessful responses
+  if (!data?.success) {
+    throw new Error(data?.error || 'Unable to create your order.')
+  }
+
+  // Return order details
   return data
 }
 
@@ -26,7 +39,10 @@ export const getMyOrders = async () => {
   } = await supabase.auth.getUser()
 
   if (userError) throw userError
-  if (!user) throw new Error('Please log in to view your orders.')
+
+  if (!user) {
+    throw new Error('Please log in to view your orders.')
+  }
 
   const { data, error } = await supabase
     .from('orders')
