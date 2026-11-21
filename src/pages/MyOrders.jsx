@@ -1,28 +1,61 @@
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ShoppingBag } from 'lucide-react'
-import { getMyOrders } from '../services/orderService'
+import { ShoppingBag, XCircle, RefreshCw } from 'lucide-react'
+import { getMyOrders, cancelMyOrder } from '../services/orderService'
 
 const MyOrders = () => {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [cancellingId, setCancellingId] = useState(null)
+
+  const loadOrders = async () => {
+    try {
+      setError('')
+      const data = await getMyOrders()
+      setOrders(data || [])
+    } catch (err) {
+      setError(err.message || 'Failed to load your orders.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const loadOrders = async () => {
-      try {
-        const data = await getMyOrders()
-        setOrders(data || [])
-      } catch (err) {
-        setError(err.message || 'Failed to load your orders.')
-      } finally {
-        setLoading(false)
-      }
-    }
-
     loadOrders()
   }, [])
+
+  const handleCancelOrder = async (order) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to cancel order #${order.order_number || order.id}?`
+    )
+
+    if (!confirmed) return
+
+    try {
+      setCancellingId(order.id)
+      setError('')
+      setSuccess('')
+
+      await cancelMyOrder(order.id)
+
+      setOrders((previousOrders) =>
+        previousOrders.map((item) =>
+          item.id === order.id
+            ? { ...item, status: 'cancelled' }
+            : item
+        )
+      )
+
+      setSuccess('Your order has been cancelled successfully.')
+    } catch (err) {
+      setError(err.message || 'Unable to cancel your order.')
+    } finally {
+      setCancellingId(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -40,12 +73,18 @@ const MyOrders = () => {
         </h1>
 
         <p className="mb-8 text-gray-600">
-          View your purchase history.
+          View and manage your purchase history.
         </p>
 
         {error && (
-          <p className="rounded-lg bg-red-100 p-4 text-red-700">
+          <p className="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
             {error}
+          </p>
+        )}
+
+        {success && (
+          <p className="mb-4 rounded-lg bg-green-100 p-4 text-green-800">
+            {success}
           </p>
         )}
 
@@ -79,7 +118,7 @@ const MyOrders = () => {
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p className="font-semibold text-gray-900">
-                    Order #{order.id}
+                    Order #{order.order_number || order.id}
                   </p>
 
                   <p className="text-sm text-gray-500">
@@ -92,11 +131,45 @@ const MyOrders = () => {
                     KSh {Number(order.total_amount).toLocaleString()}
                   </p>
 
-                  <span className="text-sm capitalize text-gray-600">
+                  <span
+                    className={`text-sm font-medium capitalize ${
+                      order.status === 'cancelled'
+                        ? 'text-red-600'
+                        : order.status === 'delivered'
+                          ? 'text-green-700'
+                          : 'text-gray-600'
+                    }`}
+                  >
                     {order.status}
                   </span>
                 </div>
               </div>
+
+              {order.status === 'pending' && (
+                <div className="mt-4 border-t border-gray-100 pt-4">
+                  <button
+                    onClick={() => handleCancelOrder(order)}
+                    disabled={cancellingId === order.id}
+                    className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {cancellingId === order.id ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        Cancelling...
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="h-4 w-4" />
+                        Cancel Order
+                      </>
+                    )}
+                  </button>
+
+                  <p className="mt-2 text-xs text-gray-500">
+                    You can cancel this order while it is still pending.
+                  </p>
+                </div>
+              )}
             </div>
           ))}
         </div>

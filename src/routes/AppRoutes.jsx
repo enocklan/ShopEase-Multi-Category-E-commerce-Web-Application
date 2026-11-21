@@ -39,6 +39,7 @@ import AdminDashboard from '../pages/admin/AdminDashboard'
 import ManageProducts from '../pages/admin/ManageProducts' 
 import AddProduct from '../pages/admin/AddProduct'
 import ManageCategories from '../pages/admin/ManageCategories'
+import ManageOrders from '../pages/admin/ManageOrders'
 
 const AppRoutes = () => {
   return (
@@ -75,6 +76,7 @@ const AppRoutes = () => {
             <Route path="payments" element={<ManagePayments />} />
             <Route path="products/add" element={<AddProduct />} />
             <Route path="categories" element={<ManageCategories />} />
+            <Route path="orders" element={<ManageOrders />} />
             </Route>
         </Route>
 
