@@ -150,3 +150,53 @@ export const updateProductStatus = async (productId, isActive) => {
   return data
 }
 
+
+// Create a new product
+export const createProduct = async (productData) => {
+  const { data, error } = await supabase
+    .from('products')
+    .insert([productData])
+    .select()
+    .single()
+
+  if (error) throw error
+
+  return data
+}
+
+// Upload a product image to Supabase Storage
+export const uploadProductImage = async (file) => {
+  if (!file) {
+    throw new Error('Please select a product image.')
+  }
+
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error('Only JPG, PNG, and WebP images are allowed.')
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error('Image size must not exceed 5MB.')
+  }
+
+  const fileExtension = file.name.split('.').pop().toLowerCase()
+  const fileName = `${crypto.randomUUID()}.${fileExtension}`
+  const filePath = `products/${fileName}`
+
+  const { error } = await supabase.storage
+    .from('product-images')
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+    })
+
+  if (error) throw error
+
+  const { data } = supabase.storage
+    .from('product-images')
+    .getPublicUrl(filePath)
+
+  return data.publicUrl
+}
+

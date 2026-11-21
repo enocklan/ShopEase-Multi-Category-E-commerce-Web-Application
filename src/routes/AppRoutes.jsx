@@ -37,6 +37,7 @@ import AdminLayout from '../components/layout/AdminLayout'
 import ManagePayments from '../pages/admin/ManagePayments'
 import AdminDashboard from '../pages/admin/AdminDashboard'
 import ManageProducts from '../pages/admin/ManageProducts' 
+import AddProduct from '../pages/admin/AddProduct'
 
 const AppRoutes = () => {
   return (
@@ -71,6 +72,7 @@ const AppRoutes = () => {
             <Route index element={<AdminDashboard />} />
             <Route path="products" element={<ManageProducts />} />
             <Route path="payments" element={<ManagePayments />} />
+            <Route path="products/add" element={<AddProduct />} />
             </Route>
         </Route>
 
