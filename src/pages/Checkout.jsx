@@ -1,13 +1,14 @@
 
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { MapPin, ShoppingBag, Truck } from 'lucide-react'
+import { MapPin, ShoppingBag, Truck, Smartphone } from 'lucide-react'
 
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 
 import { validateDeliveryDetails } from '../utils/validators'
 import { createOrder } from '../services/orderService'
+import { initiateMpesaPayment } from '../services/paymentService'
 
 const counties = [
   'Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet',
@@ -58,10 +59,17 @@ const Checkout = () => {
   const [savingAddress, setSavingAddress] = useState(false)
   const [orderResult, setOrderResult] = useState(null)
 
+  // M-Pesa payment states
+  const [initiatingPayment, setInitiatingPayment] = useState(false)
+  const [paymentMessage, setPaymentMessage] = useState('')
+  const [paymentError, setPaymentError] = useState('')
+  const [paymentInitiated, setPaymentInitiated] = useState(false)
+
   if (cartItems.length === 0 && !orderResult) {
     return <Navigate to="/cart" replace />
   }
 
+  // Handle delivery form changes
   const handleChange = (event) => {
     const { name, value } = event.target
 
@@ -77,23 +85,70 @@ const Checkout = () => {
 
     setSuccessMessage('')
     setSaveError('')
+    setPaymentError('')
   }
 
+  // Initiate M-Pesa payment for an existing order
+  const handlePayment = async (order) => {
+    try {
+      setInitiatingPayment(true)
+      setPaymentError('')
+      setPaymentMessage('Sending M-Pesa payment request...')
+
+      const result = await initiateMpesaPayment(
+        order.order_id,
+        formData.phone.trim()
+      )
+
+      setPaymentInitiated(true)
+
+      // Clear the cart only after the STK request succeeds.
+      clearCart()
+
+      setPaymentMessage(
+        result.message ||
+        'M-Pesa prompt sent successfully. Check your phone and enter your M-Pesa PIN.'
+      )
+    } catch (error) {
+      console.error('M-Pesa payment error:', error)
+
+      setPaymentMessage('')
+      setPaymentError(
+        error.message ||
+        'Unable to initiate M-Pesa payment. Please try again.'
+      )
+    } finally {
+      setInitiatingPayment(false)
+    }
+  }
+
+  // Create order and initiate payment
   const handleSubmit = async (event) => {
     event.preventDefault()
 
-    if (orderResult) return
+    if (savingAddress || initiatingPayment || paymentInitiated) {
+      return
+    }
 
     if (!user?.id) {
       setSaveError('Please log in before placing your order.')
       return
     }
 
+    setSaveError('')
+    setPaymentError('')
+    setPaymentMessage('')
+
+    // If an order already exists, retry payment instead
+    // of creating another order.
+    if (orderResult) {
+      await handlePayment(orderResult)
+      return
+    }
+
     const validationErrors = validateDeliveryDetails(formData)
 
     setErrors(validationErrors)
-    setSaveError('')
-    setSuccessMessage('')
 
     if (Object.keys(validationErrors).length > 0) {
       return
@@ -102,8 +157,7 @@ const Checkout = () => {
     try {
       setSavingAddress(true)
 
-      // Create the order using the secure Supabase function.
-      // The database calculates the actual prices and checks stock.
+      // Create the order using the secure Supabase RPC.
       const result = await createOrder(cartItems, {
         full_name: formData.fullName.trim(),
         phone: formData.phone.trim(),
@@ -114,26 +168,29 @@ const Checkout = () => {
         instructions: formData.instructions.trim(),
       })
 
-      // Store the successful order response.
+      // Save the returned order information.
+      // The RPC returns order_id, not id.
       setOrderResult(result)
 
-      // Clear the cart only after successful order creation.
-      clearCart()
-
       setSuccessMessage(
-        'Your order has been placed successfully!'
+        'Your order has been created. Complete payment using M-Pesa.'
       )
+
+      // Initiate STK Push using the new order.
+      await handlePayment(result)
     } catch (error) {
-      console.error('Order creation error:', error)
+      console.error('Checkout error:', error)
 
       setSaveError(
-        error.message || 'Unable to place your order. Please try again.'
+        error.message ||
+        'Unable to create your order. Please try again.'
       )
     } finally {
       setSavingAddress(false)
     }
   }
 
+  // Input styling with validation support
   const inputClass = (field) =>
     `mt-2 w-full rounded-lg border px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100 ${
       errors[field] ? 'border-red-500' : 'border-gray-300'
@@ -150,7 +207,7 @@ const Checkout = () => {
           </h1>
 
           <p className="mt-2 text-gray-600">
-            Enter your delivery details to place your order.
+            Enter your delivery details and pay securely using M-Pesa.
           </p>
         </div>
 
@@ -196,6 +253,7 @@ const Checkout = () => {
                     value={formData.fullName}
                     onChange={handleChange}
                     placeholder="Enter your full name"
+                    disabled={Boolean(orderResult)}
                     className={inputClass('fullName')}
                   />
 
@@ -212,7 +270,7 @@ const Checkout = () => {
                     htmlFor="phone"
                     className="font-medium text-gray-700"
                   >
-                    Phone number *
+                    M-Pesa phone number *
                   </label>
 
                   <input
@@ -222,6 +280,7 @@ const Checkout = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     placeholder="0712345678"
+                    disabled={Boolean(orderResult)}
                     className={inputClass('phone')}
                   />
 
@@ -230,6 +289,10 @@ const Checkout = () => {
                       {errors.phone}
                     </p>
                   )}
+
+                  <p className="mt-1 text-xs text-gray-500">
+                    Enter the number that should receive the M-Pesa prompt.
+                  </p>
                 </div>
 
                 {/* County */}
@@ -246,6 +309,7 @@ const Checkout = () => {
                     name="county"
                     value={formData.county}
                     onChange={handleChange}
+                    disabled={Boolean(orderResult)}
                     className={inputClass('county')}
                   >
                     <option value="">Select your county</option>
@@ -280,6 +344,7 @@ const Checkout = () => {
                     value={formData.city}
                     onChange={handleChange}
                     placeholder="e.g. Nairobi"
+                    disabled={Boolean(orderResult)}
                     className={inputClass('city')}
                   />
 
@@ -307,6 +372,7 @@ const Checkout = () => {
                     onChange={handleChange}
                     placeholder="e.g. 00100"
                     maxLength={5}
+                    disabled={Boolean(orderResult)}
                     className={inputClass('postalCode')}
                   />
 
@@ -333,6 +399,7 @@ const Checkout = () => {
                     onChange={handleChange}
                     rows={3}
                     placeholder="Building, street, estate or landmark"
+                    disabled={Boolean(orderResult)}
                     className={inputClass('streetAddress')}
                   />
 
@@ -359,23 +426,24 @@ const Checkout = () => {
                     onChange={handleChange}
                     rows={3}
                     placeholder="Any directions that will help us find you (optional)"
+                    disabled={Boolean(orderResult)}
                     className={inputClass('instructions')}
                   />
                 </div>
               </div>
 
-              {/* Success Message */}
+              {/* Order Creation Success */}
               {successMessage && (
                 <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
                   {successMessage}
                 </div>
               )}
 
-              {/* Order Confirmation */}
+              {/* Order Details */}
               {orderResult && (
                 <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4">
                   <h3 className="font-bold text-green-800">
-                    Order confirmed!
+                    Order created successfully!
                   </h3>
 
                   <p className="mt-2 text-sm text-green-700">
@@ -385,10 +453,47 @@ const Checkout = () => {
                   <p className="mt-1 text-sm text-green-700">
                     Total: {formatPrice(Number(orderResult.total_amount))}
                   </p>
+
+                  <p className="mt-1 text-sm text-green-700">
+                    Payment status: Awaiting M-Pesa confirmation
+                  </p>
                 </div>
               )}
 
-              {/* Error Message */}
+              {/* M-Pesa Payment Message */}
+              {paymentMessage && (
+                <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <Smartphone size={18} />
+                    M-Pesa payment
+                  </div>
+
+                  <p className="mt-2">
+                    {paymentMessage}
+                  </p>
+                </div>
+              )}
+
+              {/* M-Pesa Payment Error */}
+              {paymentError && (
+                <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                  <p className="font-semibold">
+                    Payment request failed
+                  </p>
+
+                  <p className="mt-1">
+                    {paymentError}
+                  </p>
+
+                  {orderResult && (
+                    <p className="mt-2">
+                      Your order has already been created. You can retry the payment without creating another order.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Order Creation Error */}
               {saveError && (
                 <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                   {saveError}
@@ -399,14 +504,22 @@ const Checkout = () => {
               <div className="mt-8 flex flex-col gap-4 sm:flex-row">
                 <button
                   type="submit"
-                  disabled={savingAddress || Boolean(orderResult)}
+                  disabled={
+                    savingAddress ||
+                    initiatingPayment ||
+                    paymentInitiated
+                  }
                   className="rounded-lg bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {savingAddress
-                    ? 'Processing order...'
-                    : orderResult
-                      ? 'Order placed successfully'
-                      : 'Place order'}
+                    ? 'Creating order...'
+                    : initiatingPayment
+                      ? 'Sending M-Pesa prompt...'
+                      : paymentInitiated
+                        ? 'Payment prompt sent'
+                        : orderResult
+                          ? 'Retry M-Pesa payment'
+                          : 'Place order & Pay with M-Pesa'}
                 </button>
 
                 {!orderResult && (
@@ -521,6 +634,17 @@ const Checkout = () => {
             <p className="mt-4 text-xs leading-5 text-gray-500">
               Delivery fee is currently a temporary flat rate of KSh 200.
             </p>
+
+            <div className="mt-5 rounded-lg bg-green-50 p-3">
+              <div className="flex items-center gap-2 text-sm font-semibold text-green-800">
+                <Smartphone size={18} />
+                Pay with M-Pesa
+              </div>
+
+              <p className="mt-1 text-xs leading-5 text-green-700">
+                You will receive an STK Push prompt on your phone to authorize the payment.
+              </p>
+            </div>
           </aside>
 
         </div>
