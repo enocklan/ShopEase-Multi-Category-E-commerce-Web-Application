@@ -51,3 +51,58 @@ export const getCategoryWithProducts = async (categoryId) => {
 
   return data
 }
+
+
+// Get all categories for the admin dashboard
+export const getAdminCategories = async () => {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  return data
+}
+
+// Create a new category
+export const createCategory = async (categoryData) => {
+  const { data, error } = await supabase
+    .from('categories')
+    .insert([categoryData])
+    .select()
+    .single()
+
+  if (error) throw error
+
+  return data
+}
+
+// Update category details
+export const updateCategory = async (categoryId, categoryData) => {
+  const { data, error } = await supabase
+    .from('categories')
+    .update(categoryData)
+    .eq('id', categoryId)
+    .select()
+    .single()
+
+  if (error) throw error
+
+  return data
+}
+
+// Activate or deactivate a category
+export const updateCategoryStatus = async (categoryId, isActive) => {
+  const { data, error } = await supabase
+    .from('categories')
+    .update({ is_active: isActive })
+    .eq('id', categoryId)
+    .select()
+    .single()
+
+  if (error) throw error
+
+  return data
+}
+

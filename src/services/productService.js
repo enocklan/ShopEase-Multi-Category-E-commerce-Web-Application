@@ -165,7 +165,7 @@ export const createProduct = async (productData) => {
 }
 
 // Upload a product image to Supabase Storage
-export const uploadProductImage = async (file) => {
+export const uploadProductImage = async (file, folder = 'products') => {
   if (!file) {
     throw new Error('Please select a product image.')
   }
@@ -182,7 +182,7 @@ export const uploadProductImage = async (file) => {
 
   const fileExtension = file.name.split('.').pop().toLowerCase()
   const fileName = `${crypto.randomUUID()}.${fileExtension}`
-  const filePath = `products/${fileName}`
+  const filePath = `${folder}/${fileName}`
 
   const { error } = await supabase.storage
     .from('product-images')
