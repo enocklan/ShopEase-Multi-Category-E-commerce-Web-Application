@@ -30,58 +30,46 @@ import MainLayout from '../components/layout/MainLayout'
 
 // Protected routes
 import ProtectedRoute from './ProtectedRoute'
+import AdminRoute from './AdminRoute'
+
+// Admin pages
+import ManagePayments from '../pages/admin/ManagePayments'
 
 const AppRoutes = () => {
   return (
     <BrowserRouter>
       <Routes>
-
-        {/* Pages without the main Navbar and Footer */}
+        {/* Authentication pages */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route
-          path="/forgot-password"
-          element={<ForgotPassword />}
-        />
-        <Route
-          path="/reset-password"
-          element={<ResetPassword />}
-        />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Pages using the shared Navbar and Footer */}
+        {/* Main website layout */}
         <Route element={<MainLayout />}>
-
           <Route path="/" element={<Home />} />
-
           <Route path="/products" element={<Products />} />
-          <Route
-            path="/products/:slug"
-            element={<ProductDetails />}
-          />
-
+          <Route path="/products/:slug" element={<ProductDetails />} />
           <Route path="/categories" element={<Categories />} />
-          <Route
-            path="/categories/:slug"
-            element={<CategoryDetails />}
-          />
-
+          <Route path="/categories/:slug" element={<CategoryDetails />} />
           <Route path="/cart" element={<Cart />} />
 
-          {/* Protected customer pages */}
+          {/* Customer protected pages */}
           <Route element={<ProtectedRoute />}>
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/my-orders" element={<MyOrders />} />
           </Route>
-
         </Route>
 
-        {/* Unknown pages */}
-        <Route
-          path="*"
-          element={<Navigate to="/" replace />}
-        />
+        {/* Admin protected pages */}
+        <Route path="/admin" element={<AdminRoute />}>
+          <Route index element={<Navigate to="/admin/payments" replace />} />
+          <Route path="payments" element={<ManagePayments />} />
+        </Route>
 
+        {/* Unknown routes */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )

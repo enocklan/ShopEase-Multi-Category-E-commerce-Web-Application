@@ -1,42 +1,33 @@
 
 import { Navigate, Outlet } from 'react-router-dom'
-import { Routes, Route } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-
-import AdminDashboard from '../pages/admin/AdminDashboard'
-import ManageProducts from '../pages/admin/ManageProducts'
-import AddProduct from '../pages/admin/AddProduct'
-import ManageCategories from '../pages/admin/ManageCategories'
-import ManageOrders from '../pages/admin/ManageOrders'
-import ManageCustomers from '../pages/admin/ManageCustomers'
-import ManagePayments from '../pages/admin/ManagePayments'
 
 const AdminRoute = () => {
   const { user, isAdmin, loading } = useAuth()
 
+  // Wait until Supabase finishes checking the user's session
   if (loading) {
-    return <p className="p-6 text-center">Checking administrator access...</p>
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-green-50">
+        <p className="text-lg font-medium text-green-800">
+          Checking administrator access...
+        </p>
+      </div>
+    )
   }
 
+  // Redirect users who are not logged in
   if (!user) {
     return <Navigate to="/login" replace />
   }
 
+  // Redirect logged-in customers who are not administrators
   if (!isAdmin) {
     return <Navigate to="/" replace />
   }
 
-  return (
-    <Routes>
-      <Route index element={<AdminDashboard />} />
-      <Route path="products" element={<ManageProducts />} />
-      <Route path="products/add" element={<AddProduct />} />
-      <Route path="categories" element={<ManageCategories />} />
-      <Route path="orders" element={<ManageOrders />} />
-      <Route path="customers" element={<ManageCustomers />} />
-      <Route path="payments" element={<ManagePayments />} />
-    </Routes>
-  )
+  // Allow authorized administrators to access child routes
+  return <Outlet />
 }
 
 export default AdminRoute
