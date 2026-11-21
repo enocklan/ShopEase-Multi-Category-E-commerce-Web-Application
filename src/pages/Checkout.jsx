@@ -1,7 +1,12 @@
 
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { MapPin, ShoppingBag, Truck, Smartphone } from 'lucide-react'
+import {
+  MapPin,
+  ShoppingBag,
+  Truck,
+  Smartphone,
+} from 'lucide-react'
 
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
@@ -9,6 +14,9 @@ import { useAuth } from '../context/AuthContext'
 import { validateDeliveryDetails } from '../utils/validators'
 import { createOrder } from '../services/orderService'
 import { initiateMpesaPayment } from '../services/paymentService'
+import { calculateRoadDistance } from '../services/deliveryService'
+
+import DeliveryLocationPicker from '../components/DeliveryLocationPicker'
 
 const counties = [
   'Baringo', 'Bomet', 'Bungoma', 'Busia', 'Elgeyo-Marakwet',
@@ -30,13 +38,30 @@ const formatPrice = (amount) =>
     maximumFractionDigits: 0,
   }).format(amount)
 
+// Estimate delivery fee using road distance.
+// The database calculates the final authoritative fee.
+const calculateDeliveryFee = (distance) => {
+  if (distance === null || distance === undefined) return null
+
+  if (distance <= 10) return 0
+  if (distance <= 20) return 100
+  if (distance <= 30) return 200
+  if (distance <= 40) return 300
+  if (distance <= 50) return 400
+  if (distance <= 60) return 500
+  if (distance <= 70) return 600
+  if (distance <= 80) return 700
+  if (distance <= 90) return 800
+  if (distance <= 100) return 900
+
+  return 1000
+}
+
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart()
   const { profile, user } = useAuth()
 
-  const deliveryFee = 200
-  const total = cartTotal + deliveryFee
-
+  // Delivery form state
   const [formData, setFormData] = useState({
     fullName:
       profile?.full_name ||
@@ -53,6 +78,13 @@ const Checkout = () => {
     instructions: '',
   })
 
+  // Delivery location states
+  const [selectedLocation, setSelectedLocation] = useState(null)
+  const [deliveryDistance, setDeliveryDistance] = useState(null)
+  const [calculatingDistance, setCalculatingDistance] = useState(false)
+  const [distanceError, setDistanceError] = useState('')
+
+  // Form and order states
   const [errors, setErrors] = useState({})
   const [successMessage, setSuccessMessage] = useState('')
   const [saveError, setSaveError] = useState('')
@@ -64,6 +96,23 @@ const Checkout = () => {
   const [paymentMessage, setPaymentMessage] = useState('')
   const [paymentError, setPaymentError] = useState('')
   const [paymentInitiated, setPaymentInitiated] = useState(false)
+
+  // IMPORTANT: Calculate derived values AFTER declaring state.
+  const estimatedDeliveryFee = calculateDeliveryFee(deliveryDistance)
+
+  const displayedSubtotal = orderResult
+    ? Number(orderResult.subtotal)
+    : cartTotal
+
+  const displayedDeliveryFee = orderResult
+    ? Number(orderResult.delivery_fee)
+    : estimatedDeliveryFee
+
+  const displayedTotal = orderResult
+    ? Number(orderResult.total_amount)
+    : estimatedDeliveryFee === null
+      ? null
+      : cartTotal + estimatedDeliveryFee
 
   if (cartItems.length === 0 && !orderResult) {
     return <Navigate to="/cart" replace />
@@ -86,6 +135,32 @@ const Checkout = () => {
     setSuccessMessage('')
     setSaveError('')
     setPaymentError('')
+  }
+
+  // Handle map location selection and calculate road distance
+  const handleLocationSelect = async (location) => {
+    setSelectedLocation(location)
+    setDeliveryDistance(null)
+    setDistanceError('')
+    setCalculatingDistance(true)
+
+    setErrors((previous) => ({
+      ...previous,
+      deliveryLocation: '',
+    }))
+
+    try {
+      const distance = await calculateRoadDistance(location)
+      setDeliveryDistance(distance)
+    } catch (error) {
+      console.error('Distance calculation error:', error)
+
+      setDistanceError(
+        error.message || 'Unable to calculate delivery distance.'
+      )
+    } finally {
+      setCalculatingDistance(false)
+    }
   }
 
   // Initiate M-Pesa payment for an existing order
@@ -126,7 +201,12 @@ const Checkout = () => {
   const handleSubmit = async (event) => {
     event.preventDefault()
 
-    if (savingAddress || initiatingPayment || paymentInitiated) {
+    if (
+      savingAddress ||
+      initiatingPayment ||
+      paymentInitiated ||
+      calculatingDistance
+    ) {
       return
     }
 
@@ -139,14 +219,28 @@ const Checkout = () => {
     setPaymentError('')
     setPaymentMessage('')
 
-    // If an order already exists, retry payment instead
-    // of creating another order.
+    // Retry payment if an order already exists.
     if (orderResult) {
       await handlePayment(orderResult)
       return
     }
 
     const validationErrors = validateDeliveryDetails(formData)
+
+    if (!selectedLocation) {
+      validationErrors.deliveryLocation =
+        'Please select your delivery location on the map.'
+    }
+
+    if (selectedLocation && deliveryDistance === null) {
+      validationErrors.deliveryLocation =
+        'Please wait for the delivery distance to be calculated successfully.'
+    }
+
+    if (distanceError) {
+      validationErrors.deliveryLocation =
+        'Unable to calculate the road distance. Please select another location or try again.'
+    }
 
     setErrors(validationErrors)
 
@@ -157,7 +251,7 @@ const Checkout = () => {
     try {
       setSavingAddress(true)
 
-      // Create the order using the secure Supabase RPC.
+      // Create the order through the secure Supabase Edge Function.
       const result = await createOrder(cartItems, {
         full_name: formData.fullName.trim(),
         phone: formData.phone.trim(),
@@ -166,10 +260,17 @@ const Checkout = () => {
         street_address: formData.streetAddress.trim(),
         postal_code: formData.postalCode.trim(),
         instructions: formData.instructions.trim(),
+
+        delivery_location: {
+          latitude: selectedLocation.lat,
+          longitude: selectedLocation.lng,
+        },
+
+        // Reference only. The Edge Function independently
+        // calculates and verifies the road distance.
+        road_distance_km: deliveryDistance,
       })
 
-      // Save the returned order information.
-      // The RPC returns order_id, not id.
       setOrderResult(result)
 
       setSuccessMessage(
@@ -239,10 +340,7 @@ const Checkout = () => {
 
                 {/* Full Name */}
                 <div className="sm:col-span-2">
-                  <label
-                    htmlFor="fullName"
-                    className="font-medium text-gray-700"
-                  >
+                  <label htmlFor="fullName" className="font-medium text-gray-700">
                     Full name *
                   </label>
 
@@ -266,10 +364,7 @@ const Checkout = () => {
 
                 {/* Phone */}
                 <div>
-                  <label
-                    htmlFor="phone"
-                    className="font-medium text-gray-700"
-                  >
+                  <label htmlFor="phone" className="font-medium text-gray-700">
                     M-Pesa phone number *
                   </label>
 
@@ -297,10 +392,7 @@ const Checkout = () => {
 
                 {/* County */}
                 <div>
-                  <label
-                    htmlFor="county"
-                    className="font-medium text-gray-700"
-                  >
+                  <label htmlFor="county" className="font-medium text-gray-700">
                     County *
                   </label>
 
@@ -330,10 +422,7 @@ const Checkout = () => {
 
                 {/* City */}
                 <div>
-                  <label
-                    htmlFor="city"
-                    className="font-medium text-gray-700"
-                  >
+                  <label htmlFor="city" className="font-medium text-gray-700">
                     Town / City *
                   </label>
 
@@ -357,10 +446,7 @@ const Checkout = () => {
 
                 {/* Postal Code */}
                 <div>
-                  <label
-                    htmlFor="postalCode"
-                    className="font-medium text-gray-700"
-                  >
+                  <label htmlFor="postalCode" className="font-medium text-gray-700">
                     Postal code
                   </label>
 
@@ -385,10 +471,7 @@ const Checkout = () => {
 
                 {/* Street Address */}
                 <div className="sm:col-span-2">
-                  <label
-                    htmlFor="streetAddress"
-                    className="font-medium text-gray-700"
-                  >
+                  <label htmlFor="streetAddress" className="font-medium text-gray-700">
                     Street address *
                   </label>
 
@@ -410,12 +493,62 @@ const Checkout = () => {
                   )}
                 </div>
 
+                {/* Delivery Map and Distance */}
+                <div className="sm:col-span-2">
+                  <DeliveryLocationPicker
+                    selectedLocation={selectedLocation}
+                    onLocationSelect={handleLocationSelect}
+                  />
+
+                  {calculatingDistance && (
+                    <p className="mt-3 text-sm text-gray-600">
+                      Calculating road distance from HH Towers...
+                    </p>
+                  )}
+
+                  {deliveryDistance !== null && (
+                    <div className="mt-3 rounded-lg border border-green-200 bg-green-50 p-4">
+                      <p className="font-semibold text-green-800">
+                        Delivery road distance: {deliveryDistance} km
+                      </p>
+
+                      <p className="mt-1 text-sm text-green-700">
+                        Distance calculated from HH Towers, Moi Avenue, Nairobi CBD.
+                      </p>
+
+                      <p className="mt-2 text-sm font-semibold text-green-800">
+                        Estimated delivery fee:{' '}
+                        {estimatedDeliveryFee === 0
+                          ? 'FREE'
+                          : formatPrice(estimatedDeliveryFee)}
+                      </p>
+                    </div>
+                  )}
+
+                  {distanceError && (
+                    <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
+                      <p className="text-sm text-red-700">
+                        {distanceError}
+                      </p>
+                    </div>
+                  )}
+
+                  {errors.deliveryLocation && (
+                    <p className="mt-2 text-sm text-red-600">
+                      {errors.deliveryLocation}
+                    </p>
+                  )}
+
+                  {orderResult && (
+                    <p className="mt-2 text-xs text-gray-500">
+                      Your delivery location has been saved with this order.
+                    </p>
+                  )}
+                </div>
+
                 {/* Additional Instructions */}
                 <div className="sm:col-span-2">
-                  <label
-                    htmlFor="instructions"
-                    className="font-medium text-gray-700"
-                  >
+                  <label htmlFor="instructions" className="font-medium text-gray-700">
                     Additional delivery instructions
                   </label>
 
@@ -448,6 +581,17 @@ const Checkout = () => {
 
                   <p className="mt-2 text-sm text-green-700">
                     Order number: {orderResult.order_number}
+                  </p>
+
+                  <p className="mt-1 text-sm text-green-700">
+                    Verified road distance: {orderResult.road_distance_km} km
+                  </p>
+
+                  <p className="mt-1 text-sm text-green-700">
+                    Delivery fee:{' '}
+                    {Number(orderResult.delivery_fee) === 0
+                      ? 'FREE'
+                      : formatPrice(Number(orderResult.delivery_fee))}
                   </p>
 
                   <p className="mt-1 text-sm text-green-700">
@@ -507,7 +651,8 @@ const Checkout = () => {
                   disabled={
                     savingAddress ||
                     initiatingPayment ||
-                    paymentInitiated
+                    paymentInitiated ||
+                    calculatingDistance
                   }
                   className="rounded-lg bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
@@ -515,11 +660,13 @@ const Checkout = () => {
                     ? 'Creating order...'
                     : initiatingPayment
                       ? 'Sending M-Pesa prompt...'
-                      : paymentInitiated
-                        ? 'Payment prompt sent'
-                        : orderResult
-                          ? 'Retry M-Pesa payment'
-                          : 'Place order & Pay with M-Pesa'}
+                      : calculatingDistance
+                        ? 'Calculating delivery distance...'
+                        : paymentInitiated
+                          ? 'Payment prompt sent'
+                          : orderResult
+                            ? 'Retry M-Pesa payment'
+                            : 'Place order & Pay with M-Pesa'}
                 </button>
 
                 {!orderResult && (
@@ -586,9 +733,7 @@ const Checkout = () => {
                   </div>
 
                   <p className="whitespace-nowrap text-sm font-semibold text-gray-800">
-                    {formatPrice(
-                      Number(item.price) * item.quantity
-                    )}
+                    {formatPrice(Number(item.price) * item.quantity)}
                   </p>
                 </div>
               ))}
@@ -597,42 +742,49 @@ const Checkout = () => {
             <div className="my-6 border-t border-gray-200" />
 
             <div className="space-y-3 text-sm">
+              {/* Subtotal */}
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal</span>
 
                 <span className="font-medium">
-                  {formatPrice(cartTotal)}
+                  {formatPrice(displayedSubtotal)}
                 </span>
               </div>
 
+              {/* Delivery Fee */}
               <div className="flex justify-between">
                 <span className="flex items-center gap-2 text-gray-600">
                   <Truck size={16} />
-                  Delivery fee
+                  {orderResult ? 'Delivery fee' : 'Estimated delivery fee'}
                 </span>
 
                 <span className="font-medium">
-                  {formatPrice(deliveryFee)}
+                  {displayedDeliveryFee === null
+                    ? 'Select location'
+                    : displayedDeliveryFee === 0
+                      ? 'FREE'
+                      : formatPrice(displayedDeliveryFee)}
                 </span>
               </div>
             </div>
 
             <div className="my-5 border-t border-gray-200" />
 
+            {/* Total */}
             <div className="flex justify-between text-lg font-bold">
               <span>Total</span>
 
               <span className="text-green-700">
-                {formatPrice(
-                  orderResult
-                    ? Number(orderResult.total_amount)
-                    : total
-                )}
+                {displayedTotal === null
+                  ? 'Select location'
+                  : formatPrice(displayedTotal)}
               </span>
             </div>
 
             <p className="mt-4 text-xs leading-5 text-gray-500">
-              Delivery fee is currently a temporary flat rate of KSh 200.
+              {orderResult
+                ? `Verified delivery distance: ${orderResult.road_distance_km} km.`
+                : 'Free delivery within 10 km. Additional delivery charges apply for longer distances.'}
             </p>
 
             <div className="mt-5 rounded-lg bg-green-50 p-3">
