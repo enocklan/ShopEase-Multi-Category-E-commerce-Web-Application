@@ -100,3 +100,53 @@ export const getProductsByCategory = async (categoryId) => {
 
   return data
 }
+
+
+// Get all products for the admin panel (active and inactive)
+export const getAdminProducts = async ({ search, status } = {}) => {
+  let query = supabase
+    .from('products')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  // Search by product name, description or SKU
+  if (search?.trim()) {
+    const searchTerm = search.trim()
+
+    query = query.or(
+      `name.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,sku.ilike.%${searchTerm}%`
+    )
+  }
+
+  // Filter by active or inactive status
+  if (status === 'active') {
+    query = query.eq('is_active', true)
+  } else if (status === 'inactive') {
+    query = query.eq('is_active', false)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+// Activate or deactivate a product
+export const updateProductStatus = async (productId, isActive) => {
+  const { data, error } = await supabase
+    .from('products')
+    .update({ is_active: isActive })
+    .eq('id', productId)
+    .select()
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+

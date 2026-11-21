@@ -33,7 +33,10 @@ import ProtectedRoute from './ProtectedRoute'
 import AdminRoute from './AdminRoute'
 
 // Admin pages
+import AdminLayout from '../components/layout/AdminLayout'
 import ManagePayments from '../pages/admin/ManagePayments'
+import AdminDashboard from '../pages/admin/AdminDashboard'
+import ManageProducts from '../pages/admin/ManageProducts' 
 
 const AppRoutes = () => {
   return (
@@ -64,8 +67,11 @@ const AppRoutes = () => {
 
         {/* Admin protected pages */}
         <Route path="/admin" element={<AdminRoute />}>
-          <Route index element={<Navigate to="/admin/payments" replace />} />
-          <Route path="payments" element={<ManagePayments />} />
+            <Route element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="products" element={<ManageProducts />} />
+            <Route path="payments" element={<ManagePayments />} />
+            </Route>
         </Route>
 
         {/* Unknown routes */}
