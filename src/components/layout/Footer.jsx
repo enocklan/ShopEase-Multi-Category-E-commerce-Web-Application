@@ -6,9 +6,11 @@ import {
   Phone,
   MapPin,
 } from 'lucide-react'
+import { useAuth } from '../../context/AuthContext'
 
 const Footer = () => {
   const currentYear = new Date().getFullYear()
+  const { isAuthenticated, isAdmin, loading } = useAuth()
 
   return (
     <footer className="bg-gray-900 text-gray-300">
@@ -97,36 +99,59 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Customer Account */}
-          <div>
-            <h3 className="mb-5 text-lg font-semibold text-white">
-              My Account
-            </h3>
+         {/* Customer Account */}
+<div>
+  <h3 className="mb-5 text-lg font-semibold text-white">
+    My Account
+  </h3>
 
-            <ul className="space-y-3 text-sm">
-              <li>
-                <Link to="/login" className="transition hover:text-green-400">
-                  Login
-                </Link>
-              </li>
-              <li>
-                <Link to="/register" className="transition hover:text-green-400">
-                  Create Account
-                </Link>
-              </li>
-              <li>
-                <Link to="/profile" className="transition hover:text-green-400">
-                  My Profile
-                </Link>
-              </li>
-              <li>
-                <Link to="/my-orders" className="transition hover:text-green-400">
-                  My Orders
-                </Link>
-              </li>
-            </ul>
-          </div>
+  {loading ? (
+    <p className="text-sm text-gray-400">
+      Loading account...
+    </p>
+  ) : (
+    <ul className="space-y-3 text-sm">
+      {!isAuthenticated ? (
+        <>
+          <li>
+            <Link to="/login" className="transition hover:text-green-400">
+              Login
+            </Link>
+          </li>
 
+          <li>
+            <Link to="/register" className="transition hover:text-green-400">
+              Create Account
+            </Link>
+          </li>
+        </>
+      ) : isAdmin ? (
+        <li>
+          <Link
+            to="/admin"
+            className="transition hover:text-green-400"
+          >
+            Admin Dashboard
+          </Link>
+        </li>
+      ) : (
+        <>
+          <li>
+            <Link to="/profile" className="transition hover:text-green-400">
+              My Profile
+            </Link>
+          </li>
+
+          <li>
+            <Link to="/my-orders" className="transition hover:text-green-400">
+              My Orders
+            </Link>
+          </li>
+        </>
+      )}
+    </ul>
+  )}
+</div>
           {/* Contact */}
           <div>
             <h3 className="mb-5 text-lg font-semibold text-white">
