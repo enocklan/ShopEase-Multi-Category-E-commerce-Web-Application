@@ -118,3 +118,15 @@ export const changeUserPassword = async (
 
   return data
 }
+
+
+// Get all customers for the admin dashboard
+export const getAdminCustomers = async () => {
+  const { data, error } = await supabase.rpc('get_admin_customers')
+
+  if (error) {
+    throw new Error(error.message || 'Unable to load customers.')
+  }
+
+  return data || []
+}

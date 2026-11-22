@@ -40,6 +40,7 @@ import ManageProducts from '../pages/admin/ManageProducts'
 import AddProduct from '../pages/admin/AddProduct'
 import ManageCategories from '../pages/admin/ManageCategories'
 import ManageOrders from '../pages/admin/ManageOrders'
+import ManageCustomers from '../pages/admin/ManageCustomers'
 
 const AppRoutes = () => {
   return (
@@ -71,12 +72,13 @@ const AppRoutes = () => {
         {/* Admin protected pages */}
         <Route path="/admin" element={<AdminRoute />}>
             <Route element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="products" element={<ManageProducts />} />
-            <Route path="payments" element={<ManagePayments />} />
-            <Route path="products/add" element={<AddProduct />} />
-            <Route path="categories" element={<ManageCategories />} />
-            <Route path="orders" element={<ManageOrders />} />
+               <Route index element={<AdminDashboard />} />
+               <Route path="products" element={<ManageProducts />} />
+               <Route path="payments" element={<ManagePayments />} />
+               <Route path="products/add" element={<AddProduct />} />
+               <Route path="categories" element={<ManageCategories />} />
+               <Route path="orders" element={<ManageOrders />} />
+                <Route path="customers" element={<ManageCustomers/>} />
             </Route>
         </Route>
 
