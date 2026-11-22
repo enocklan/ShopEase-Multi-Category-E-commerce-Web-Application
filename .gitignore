@@ -23,7 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment variables and secrets
 .env
 .env.*
-!.env.examplesupabase/.env.mpesa
+!.env.example
 supabase/.env.mpesa
