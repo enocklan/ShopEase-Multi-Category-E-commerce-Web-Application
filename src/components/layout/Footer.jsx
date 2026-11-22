@@ -189,7 +189,7 @@ const Footer = () => {
           </p>
 
           <p className="text-gray-400">
-            Made by <span className="text-green-400">Enock♥</span> Kenya
+            Made by <span className="text-green-400">Enock♥ </span> Kenya
           </p>
         </div>
 
